@@ -33,6 +33,9 @@ class _ChatScreenState extends State<ChatScreen> {
   
   bool _isTyping = false;
   bool _isListening = false;
+  bool _isDictating = false;
+  bool _isMuted = false;
+  bool _audioUnlocked = false;
   String _partialSpeech = '';
 
   final List<String> _suggestedQuestions = [
@@ -46,6 +49,12 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _voiceService.init();
+    _ttsService.onStart = () {
+      if (mounted) setState(() => _isDictating = true);
+    };
+    _ttsService.onDone = () {
+      if (mounted) setState(() => _isDictating = false);
+    };
   }
 
   final ScrollController _scrollController = ScrollController();
@@ -65,6 +74,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
     await _ttsService.stop();
+    // Unlock browser audio on first explicit user gesture
+    if (!_audioUnlocked) {
+      await _ttsService.unlock();
+      _audioUnlocked = true;
+    }
 
     final userMsg = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -93,10 +107,12 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         _scrollToBottom();
         
-        for (var res in responses) {
-          if (res.type == 'text' && res.content.isNotEmpty) {
-            _ttsService.speak(res.content, l10n.locale.languageCode);
-            break;
+        if (!_isMuted) {
+          for (var res in responses) {
+            if (res.type == 'text' && res.content.isNotEmpty) {
+              _ttsService.speak(res.content, l10n.locale.languageCode);
+              break;
+            }
           }
         }
       }
@@ -148,7 +164,31 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppHeader(title: l10n.get('chat')),
+      appBar: AppBar(
+        title: Text(l10n.get('chat'), style: Theme.of(context).textTheme.displaySmall?.copyWith(color: AppColors.primaryDark)),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(icon: const Icon(LucideIcons.arrowLeft), onPressed: () => Navigator.of(context).pop())
+            : IconButton(icon: const Icon(LucideIcons.menu), onPressed: () {}),
+        actions: [
+          IconButton(
+            tooltip: _isMuted ? 'Unmute voice' : 'Mute voice',
+            icon: Icon(_isMuted ? LucideIcons.volumeX : LucideIcons.volume2,
+                color: _isMuted ? Colors.red : AppColors.primaryDark),
+            onPressed: () async {
+              if (_isMuted) {
+                setState(() => _isMuted = false);
+              } else {
+                await _ttsService.stop();
+                setState(() {
+                  _isMuted = true;
+                  _isDictating = false;
+                });
+              }
+            },
+          ),
+          IconButton(icon: const Icon(LucideIcons.bell), onPressed: () {}),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -253,16 +293,31 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
+                if (_isDictating)
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(LucideIcons.square, color: AppColors.surface, size: 16),
+                      onPressed: () async {
+                        await _ttsService.stop();
+                        if (mounted) setState(() => _isDictating = false);
+                      },
+                    ),
+                  )
+                else
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(LucideIcons.send, color: AppColors.surface, size: 20),
+                      onPressed: () => _sendMessage(_textController.text),
+                    ),
                   ),
-                  child: IconButton(
-                    icon: const Icon(LucideIcons.send, color: AppColors.surface, size: 20),
-                    onPressed: () => _sendMessage(_textController.text),
-                  ),
-                ),
               ],
             ),
           ),

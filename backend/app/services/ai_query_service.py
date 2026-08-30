@@ -106,7 +106,9 @@ class AIQueryService:
                 
             elif query.intent == 'alerts':
                 alerts = await self.alert.get_active_alerts(target_lat, target_lon)
-                context_data = {"alerts": [a.model_dump() for a in alerts]}
+                weather_resp = await self.weather.get_current_weather(city=target_name, lat=target_lat, lon=target_lon)
+                context_data = weather_resp.model_dump()
+                context_data["alerts"] = [a.model_dump() for a in alerts]
                 source = {"provider": "IMD"}
             
             elif query.data_source and query.data_source.lower() in ['gfs', 'wrf']:

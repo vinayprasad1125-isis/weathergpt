@@ -7,6 +7,7 @@ import '../widgets/weather_card.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/alert_card.dart';
 import '../widgets/headers.dart';
+import 'chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -62,6 +63,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const AppHeader(title: '🌦 WeatherGPT'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatScreen()),
+        ),
+        backgroundColor: AppColors.primary,
+        tooltip: 'Ask WeatherGPT',
+        child: const Icon(LucideIcons.messageCircle, color: Colors.white, size: 26),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
@@ -117,41 +127,47 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md).copyWith(top: AppSpacing.xl),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Ask WeatherGPT', style: Theme.of(context).textTheme.displaySmall),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: AppColors.card,
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(color: AppColors.border),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xl, AppSpacing.md, AppSpacing.xxl),
+                    child: GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ChatScreen()),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Ask WeatherGPT', style: Theme.of(context).textTheme.displaySmall),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.card,
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Text('Ask about the weather...', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
                                 ),
-                                child: Text('Ask about the weather...', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
                               ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2)),
-                                ],
+                              const SizedBox(width: AppSpacing.sm),
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2)),
+                                  ],
+                                ),
+                                child: const Icon(LucideIcons.messageCircle, color: AppColors.surface),
                               ),
-                              child: const Icon(LucideIcons.mic, color: AppColors.surface),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

@@ -23,3 +23,7 @@ class ChatResponse(BaseModel):
     query: Optional[StructuredWeatherQuery] = None
     weather_data: Optional[dict[str, Any]] = None
     source: Optional[dict[str, str]] = None
+
+class TTSRequest(BaseModel):
+    text: str
+    language: str = "en"

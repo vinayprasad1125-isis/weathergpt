@@ -33,6 +33,7 @@ Rules:
 - If the user asks about pesticide spraying, crop spraying, farm spraying → set intent="advisory", user_type="farmer", advisory_type="pesticide_spraying"
 - If the user asks about irrigation, watering crops → set intent="advisory", user_type="farmer", advisory_type="irrigation"
 - If the user asks about flying, aviation, flight conditions → set intent="advisory", user_type="pilot", advisory_type="flight_briefing"
+- If the user asks about alerts, warnings, cyclone, flood, storm → set intent="alerts", data_source="weather_forecast"
 - For any advisory intent, set data_source="weather_forecast"
 - For current weather questions → set data_source="current_weather"
 - For forecast questions → set data_source="weather_forecast"
@@ -127,12 +128,12 @@ STRICT DATA RULES:
 - Use ONLY the supplied weather data to make factual claims.
 - Do NOT invent temperatures, rainfall, wind speed, humidity, or any weather values.
 - If the data does not contain a requested field, explicitly say it is unavailable.
+- DO NOT include hourly forecasts in your response. ONLY provide the daily summary or current conditions (temperature, precipitation, humidity, wind, etc.).
 
 TONE & STYLE RULES:
-1. First, always provide the raw data in a clean, list-like structure (e.g., Temp: X°C, Condition: Y). Use emojis if appropriate.
-2. Second, provide a detailed but concise explanation of what that means for the user (2-3 sentences).
-3. Be conversational, engaging, and helpful in your explanation (e.g., "Yes, you should expect some rain tomorrow!").
-4. Do not just output a single robotic sentence. Give a rich, human-like summary.
+1. FIRST, directly answer the user's specific question in 2-3 conversational and engaging sentences. If they ask about a cyclone warning or other specific condition, answer that right away at the top.
+2. THEN, provide the raw weather snapshot data in a clean, list-like structure below your answer. Use emojis if appropriate.
+3. DO NOT use asterisks (**) or markdown formatting for bold text. Output plain text.
 
 Weather Data:
 {json.dumps(weather_data, indent=2)}
@@ -145,7 +146,7 @@ Weather Data:
                     {"role": "user", "content": message}
                 ]
             )
-            return response.choices[0].message.content
+            return response.choices[0].message.content.replace('*', '')
         except Exception as e:
             logger.warning(f"OpenAI unavailable for generate_response. Formatting data directly.")
             return self._format_weather_direct(weather_data)
@@ -246,6 +247,7 @@ Then list each retrieved weather factor with its value, one per line.
 Then state the recommendation verdict clearly.
 Then explain in 2-3 sentences why the conditions are or are not suitable, using the actual values above.
 End with: "⚠️ Always recheck the latest forecast before taking action."
+DO NOT use asterisks (**) or markdown formatting for bold text. Keep it plain text.
 """
         try:
             response = self.client.chat.completions.create(
@@ -255,7 +257,7 @@ End with: "⚠️ Always recheck the latest forecast before taking action."
                     {"role": "user", "content": message}
                 ]
             )
-            return response.choices[0].message.content
+            return response.choices[0].message.content.replace('*', '')
         except Exception as e:
             logger.warning("OpenAI unavailable for advisory. Using rule-engine text directly.")
             return self._mock_advisory_text(advisory_data)
@@ -276,3 +278,16 @@ End with: "⚠️ Always recheck the latest forecast before taking action."
         lines.append("")
         lines.append("Always recheck the latest forecast before taking action.")
         return "\n".join(lines)
+
+    def stream_tts(self, text: str):
+        """Generates a text-to-speech audio stream using OpenAI."""
+        if not self.client:
+            raise Exception("No OPENAI_API_KEY provided.")
+            
+        response = self.client.audio.speech.create(
+            model="tts-1",
+            voice="nova", # human-like female voice
+            input=text,
+        )
+        for chunk in response.iter_bytes():
+            yield chunk

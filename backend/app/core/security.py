@@ -43,3 +43,20 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
         
     return {"user_id": user_id}
+
+async def get_current_user_query(token: str):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+    )
+    if not token:
+        raise credentials_exception
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except jwt.PyJWTError:
+        raise credentials_exception
+        
+    return {"user_id": user_id}

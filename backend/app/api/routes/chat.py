@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.core.security import get_current_user
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from app.schemas.chat import ChatRequest, ChatResponse, TTSRequest
+from app.core.security import get_current_user, get_current_user_query
 from app.services.ai_query_service import AIQueryService
+from app.services.llm_service import OpenAILLMService
 
 router = APIRouter()
 
@@ -19,3 +21,18 @@ async def chat_endpoint(
     current_user: dict = Depends(get_current_user)
 ):
     return await service.process_chat(request)
+
+@router.get("/tts")
+async def tts_endpoint(
+    text: str,
+    language: str = "en",
+    current_user: dict = Depends(get_current_user_query)
+):
+    llm_service = OpenAILLMService()
+    try:
+        return StreamingResponse(
+            llm_service.stream_tts(text),
+            media_type="audio/mpeg"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

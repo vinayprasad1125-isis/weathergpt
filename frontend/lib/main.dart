@@ -9,6 +9,7 @@ import 'screens/forecast_screen.dart';
 import 'screens/climate_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/advisories_screen.dart';
 import 'widgets/headers.dart';
 import 'l10n/l10n.dart';
 
@@ -71,7 +72,7 @@ class _MainNavigatorState extends State<MainNavigator> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const ChatScreen(),
+    const MapScreen(),
     const ForecastScreen(),
     const AlertsScreen(),
     const MoreNavigator(),
@@ -104,7 +105,7 @@ class _MainNavigatorState extends State<MainNavigator> {
           unselectedItemColor: AppColors.textSecondary,
           items: [
             BottomNavigationBarItem(icon: const Icon(LucideIcons.home), label: l10n.get('home')),
-            BottomNavigationBarItem(icon: const Icon(LucideIcons.messageSquare), label: l10n.get('chat')),
+            BottomNavigationBarItem(icon: const Icon(LucideIcons.map), label: l10n.get('maps')),
             BottomNavigationBarItem(icon: const Icon(LucideIcons.cloud), label: l10n.get('forecast')),
             BottomNavigationBarItem(icon: const Icon(LucideIcons.alertTriangle), label: l10n.get('alerts')),
             BottomNavigationBarItem(icon: const Icon(LucideIcons.settings), label: l10n.get('more')),
@@ -131,7 +132,7 @@ class MoreNavigator extends StatelessWidget {
             page = const ClimateScreen();
             break;
           case 'Advisories':
-            page = const PlaceholderScreen(title: 'Advisories');
+            page = const AdvisoriesScreen();
             break;
           case 'Language':
             page = const LanguageSelectionScreen();
@@ -158,7 +159,6 @@ class MoreMenuScreen extends StatelessWidget {
       appBar: AppHeader(title: l10n.get('more')),
       body: ListView(
         children: [
-          ListTile(leading: const Icon(LucideIcons.map), title: Text(l10n.get('maps')), onTap: () => Navigator.pushNamed(context, 'Maps')),
           ListTile(leading: const Icon(LucideIcons.barChart2), title: Text(l10n.get('climate')), onTap: () => Navigator.pushNamed(context, 'Climate')),
           ListTile(leading: const Icon(LucideIcons.bookOpen), title: Text(l10n.get('advisories')), onTap: () => Navigator.pushNamed(context, 'Advisories')),
           ListTile(leading: const Icon(LucideIcons.globe), title: Text(l10n.get('languageSelection')), onTap: () => Navigator.pushNamed(context, 'Language')),

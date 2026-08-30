@@ -6,8 +6,11 @@ import 'package:geolocator/geolocator.dart';
 import '../services/api_gis_service.dart';
 import '../services/api_weather_service.dart';
 import '../services/location_store.dart';
+import '../services/geojson_helper.dart';
 import '../models/models.dart';
 import '../widgets/headers.dart';
+import '../widgets/map_layer_selector.dart';
+import '../widgets/map_legend.dart';
 import '../theme/app_theme.dart';
 
 class MapScreen extends StatefulWidget {
@@ -20,11 +23,12 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
   
-  String _currentLayer = 'temperature';
+  String _currentLayer = 'base';
   Map<String, dynamic>? _layerData;
   bool _isLoading = false;
   LatLng _currentMapCenter = const LatLng(13.0827, 80.2707); // Default to Chennai
   String? _selectedState;
+  List<Polygon> _stateBoundaryPolygons = [];
   WeatherData? _currentLocationWeather;
 
   final List<String> _layers = ['temperature', 'wind', 'rainfall', 'alerts', 'cyclones', 'flood'];
@@ -99,7 +103,17 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _currentLayer = layer;
     });
-    _fetchLayerData();
+    
+    if (layer == 'base') {
+      setState(() => _layerData = null);
+    } else if (layer == 'radar') {
+      setState(() => _layerData = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Radar data unavailable')),
+      );
+    } else {
+      _fetchLayerData();
+    }
   }
   
   Future<void> _recenter() async {
@@ -135,40 +149,63 @@ class _MapScreenState extends State<MapScreen> {
         _selectedState = null; // Clear state dropdown if we use GPS
       });
       _mapController.move(_currentMapCenter, 12.0);
-      _fetchLayerData(); // Fetch GIS data for the new location
+      if (_currentLayer != 'base' && _currentLayer != 'radar') {
+        _fetchLayerData();
+      }
       _fetchLocationWeather(lat: position.latitude, lon: position.longitude);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to get location.')));
     }
   }
 
-  void _onStateSelected(String? stateName) {
+  void _onStateSelected(String? stateName) async {
     if (stateName != null && _indianStates.containsKey(stateName)) {
       setState(() {
         _selectedState = stateName;
         _currentMapCenter = _indianStates[stateName]!;
+        _stateBoundaryPolygons = [];
       });
       _mapController.move(_currentMapCenter, 6.0); // Use zoom 6.0 for full state view
-      _fetchLayerData();
+      if (_currentLayer != 'base' && _currentLayer != 'radar') {
+        _fetchLayerData();
+      }
       _fetchLocationWeather(
         city: stateName,
         lat: _currentMapCenter.latitude,
         lon: _currentMapCenter.longitude,
       );
+      
+      final rings = await GeoJsonHelper.getPolygonsForState(stateName);
+      if (mounted && _selectedState == stateName) {
+        setState(() {
+          _stateBoundaryPolygons = rings.map<Polygon>((ring) => Polygon(
+            points: ring,
+            color: AppColors.primary.withOpacity(0.15),
+            borderColor: AppColors.primary,
+            borderStrokeWidth: 2.0,
+          )).toList();
+        });
+      }
     }
   }
 
   Color _getColorForValue(dynamic value) {
+    if (value is! num) return AppColors.primary;
+    
     if (_currentLayer == 'temperature') {
-      if (value is num) {
-        if (value > 35) return Colors.red;
-        if (value > 25) return Colors.orange;
-        return Colors.blue;
-      }
+      if (value > 35) return Colors.red;
+      if (value > 25) return Colors.orange;
+      return Colors.blue;
+    } else if (_currentLayer == 'wind') {
+      if (value > 60) return Colors.purple;
+      if (value > 30) return Colors.deepPurpleAccent;
+      return Colors.lightBlueAccent;
+    } else if (_currentLayer == 'rainfall') {
+      if (value > 50) return Colors.blue.shade900;
+      if (value > 10) return Colors.blue.shade600;
+      return Colors.blue.shade300;
     } else if (_currentLayer == 'alerts' || _currentLayer == 'cyclones' || _currentLayer == 'flood') {
       return Colors.redAccent;
-    } else if (_currentLayer == 'rainfall') {
-      return Colors.blueAccent;
     }
     return AppColors.primary;
   }
@@ -250,14 +287,27 @@ class _MapScreenState extends State<MapScreen> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.imd.weathergpt',
               ),
-              MarkerLayer(markers: markers),
+              if (_stateBoundaryPolygons.isNotEmpty)
+                PolygonLayer(polygons: _stateBoundaryPolygons),
+              if (_currentLayer != 'base' && _currentLayer != 'radar')
+                MarkerLayer(markers: markers),
             ],
           ),
           
           if (_isLoading)
             const Center(child: CircularProgressIndicator()),
             
-          // State Selector Dropdown
+          // Map Layer Selector Dropdown (Top Left)
+          Positioned(
+            top: 16,
+            left: 16,
+            child: MapLayerSelector(
+              selectedLayer: _currentLayer,
+              onLayerChanged: _changeLayer,
+            ),
+          ),
+            
+          // State Selector Dropdown (Top Right)
           Positioned(
             top: 16,
             right: 16,
@@ -292,7 +342,14 @@ class _MapScreenState extends State<MapScreen> {
           ),
             
 
-          // Recenter Button
+          // Map Legend (Bottom Left)
+          Positioned(
+            bottom: 20,
+            left: 16,
+            child: MapLegend(layerType: _currentLayer),
+          ),
+            
+          // Recenter Button (Bottom Right)
           Positioned(
             bottom: 20,
             right: 20,
