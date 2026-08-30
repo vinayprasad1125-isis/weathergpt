@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/weathergpt
+      - REDIS_URL=redis://redis:6379/0
+      - WEATHER_API_BASE_URL=https://api.open-meteo.com/v1
+      - GEOCODING_API_BASE_URL=https://geocoding-api.open-meteo.com/v1
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=gemini-2.5-flash
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - weathergpt-network
+    restart: unless-stopped
+
+  ingestion-worker:
+    build: .
+    command: ["python", "app/worker.py"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/weathergpt
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - weathergpt-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=weathergpt
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - weathergpt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d weathergpt"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - weathergpt-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  weathergpt-network:
+    driver: bridge
