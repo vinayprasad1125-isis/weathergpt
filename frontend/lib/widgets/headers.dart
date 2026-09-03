@@ -18,7 +18,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
             )
           : IconButton(
               icon: const Icon(LucideIcons.menu),
-              onPressed: () {},
+              onPressed: () => context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
             ),
       actions: [
         IconButton(

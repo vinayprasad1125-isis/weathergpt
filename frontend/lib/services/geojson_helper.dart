@@ -12,6 +12,7 @@ const Map<String, String> _geoJsonNameMap = {
 
 class GeoJsonHelper {
   static String? _cachedJson;
+  static Map<String, List<List<LatLng>>>? _cachedAllStates;
 
   static Future<List<List<LatLng>>> getPolygonsForState(String stateName) async {
     try {
@@ -28,6 +29,55 @@ class GeoJsonHelper {
     } catch (e) {
       debugPrint('[GeoJsonHelper] Error loading geojson: $e');
       return [];
+    }
+  }
+
+  static Future<Map<String, List<List<LatLng>>>> getAllStatePolygons() async {
+    try {
+      if (_cachedAllStates != null) return _cachedAllStates!;
+
+      _cachedJson ??= await rootBundle.loadString('assets/india_states.geojson');
+      
+      // We parse the entire file once and group by state name
+      final Map<String, List<List<LatLng>>> allPolygons = {};
+      
+      final geojson = jsonDecode(_cachedJson!);
+      final features = geojson['features'] as List;
+      
+      for (final feature in features) {
+        final props = feature['properties'];
+        final rawName = (props['NAME_1'] as String? ?? '').trim();
+        if (rawName.isEmpty) continue;
+        
+        // Reverse lookup alias (e.g. if NAME_1 is 'Orissa', we want to store it as 'Odisha' for UI)
+        String uiName = rawName;
+        for (var entry in _geoJsonNameMap.entries) {
+          if (entry.value.toLowerCase() == rawName.toLowerCase()) {
+            uiName = entry.key;
+            break;
+          }
+        }
+        
+        final geom = feature['geometry'];
+        final type = geom['type'] as String;
+        final coordinates = geom['coordinates'] as List;
+        
+        allPolygons.putIfAbsent(uiName, () => []);
+        
+        if (type == 'Polygon') {
+          allPolygons[uiName]!.add(_parseRing(coordinates[0] as List));
+        } else if (type == 'MultiPolygon') {
+          for (final polygon in coordinates) {
+            allPolygons[uiName]!.add(_parseRing((polygon as List)[0] as List));
+          }
+        }
+      }
+      
+      _cachedAllStates = allPolygons;
+      return allPolygons;
+    } catch (e) {
+      debugPrint('[GeoJsonHelper] Error loading all states geojson: $e');
+      return {};
     }
   }
 

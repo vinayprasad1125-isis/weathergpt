@@ -30,3 +30,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/india_states.geojson
+    - assets/india_temperature_1901_2025.json
