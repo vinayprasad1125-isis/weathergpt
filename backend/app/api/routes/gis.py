@@ -8,9 +8,13 @@ gis_service = GISService()
 @router.get("/layers/{layer_type}", response_model=GISLayer)
 async def get_gis_layer(layer_type: str, lat: float = Query(...), lon: float = Query(...)):
     """
-    Available layers: temperature, wind, rainfall, alerts, cyclones, flood
+    Available layers: temperature, wind, rainfall, alerts, cyclones, flood,
+                      humidity, pressure, uv_index, precipitation, cloud_cover
     """
-    valid_layers = ["temperature", "wind", "rainfall", "alerts", "cyclones", "flood"]
+    valid_layers = [
+        "temperature", "wind", "rainfall", "alerts", "cyclones", "flood",
+        "humidity", "pressure", "uv_index", "precipitation", "cloud_cover"
+    ]
     if layer_type not in valid_layers:
         raise HTTPException(status_code=400, detail=f"Invalid layer type. Must be one of {valid_layers}")
         

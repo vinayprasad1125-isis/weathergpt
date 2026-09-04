@@ -24,12 +24,103 @@ class AlertCard extends StatelessWidget {
     }
   }
 
+  void _showDetails(BuildContext context, Color bgColor) {
+    if (onPress != null) {
+      onPress!();
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: AppColors.surface,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(LucideIcons.alertTriangle, color: bgColor, size: 28),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        alert.type,
+                        style: Theme.of(context).textTheme.displaySmall,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.x, color: AppColors.textSecondary),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: bgColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: bgColor.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        '${alert.severity.toUpperCase()} SEVERITY',
+                        style: TextStyle(color: bgColor, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    if (alert.source == 'NDMA SACHET')
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          border: Border.all(color: Colors.red.withOpacity(0.5)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'NDMA SACHET',
+                          style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _DetailRow(icon: LucideIcons.mapPin, label: 'Location', value: alert.location, context: context),
+                const SizedBox(height: AppSpacing.sm),
+                _DetailRow(icon: LucideIcons.clock, label: 'Time', value: alert.time, context: context),
+                const SizedBox(height: AppSpacing.sm),
+                _DetailRow(icon: LucideIcons.info, label: 'Status', value: alert.status, context: context),
+                const SizedBox(height: AppSpacing.md),
+                const Divider(color: AppColors.border),
+                const SizedBox(height: AppSpacing.md),
+                Text('Description', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: AppSpacing.xs),
+                Text(alert.description, style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5, color: AppColors.textSecondary)),
+                const SizedBox(height: AppSpacing.md),
+                Text('Recommended Action', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: AppSpacing.xs),
+                Text(alert.recommendedAction, style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bgColor = _getSeverityColor(alert.severity);
 
     return InkWell(
-      onTap: onPress,
+      onTap: () => _showDetails(context, bgColor),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
@@ -58,6 +149,20 @@ class AlertCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: bgColor),
                   ),
                 ),
+                if (alert.source == 'NDMA SACHET')
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      border: Border.all(color: Colors.red.withOpacity(0.5)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'NDMA SACHET',
+                      style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 if (alert.isDemo)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -95,6 +200,39 @@ class AlertCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final BuildContext context;
+
+  const _DetailRow({required this.icon, required this.label, required this.value, required this.context});
+
+  @override
+  Widget build(BuildContext _) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: AppSpacing.sm),
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
     );
   }
 }

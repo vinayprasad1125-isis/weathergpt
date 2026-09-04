@@ -2,6 +2,9 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from app.schemas.alert import NormalizedAlert, AlertLocation, AlertSource
 from app.services.weather_service import WeatherService
+from app.db.database import AsyncSessionLocal
+from app.db.models import Alert
+from sqlalchemy.future import select
 import uuid
 
 class AlertService:
@@ -10,6 +13,40 @@ class AlertService:
 
     async def get_active_alerts(self, lat: Optional[float] = None, lon: Optional[float] = None, active: bool = True) -> List[NormalizedAlert]:
         alerts = []
+        
+        # 1. Fetch DB alerts (NDMA SACHET)
+        try:
+            async with AsyncSessionLocal() as session:
+                now = datetime.now(timezone.utc).replace(tzinfo=None)
+                stmt = select(Alert).where(Alert.status == "Actual")
+                if active:
+                    stmt = stmt.where(Alert.expires_at > now)
+                
+                result = await session.execute(stmt)
+                db_alerts = result.scalars().all()
+                
+                for db_a in db_alerts:
+                    # Very basic location filtering: if lat/lon is provided, ideally we'd filter
+                    # but for now we broadcast all state alerts or include them.
+                    # We will return all active Sachet alerts.
+                    alerts.append(NormalizedAlert(
+                        id=str(db_a.id),
+                        event_type=db_a.event_type,
+                        severity=db_a.severity,
+                        location=AlertLocation(name=db_a.area_desc or "India", latitude=0, longitude=0),
+                        issued_at=db_a.issued_at.isoformat() + "Z" if db_a.issued_at else "",
+                        effective_from=db_a.effective_from.isoformat() + "Z" if db_a.effective_from else "",
+                        expires_at=db_a.expires_at.isoformat() + "Z" if db_a.expires_at else "",
+                        headline=db_a.headline,
+                        description=db_a.description if db_a.description and db_a.description.strip() else db_a.headline,
+                        recommended_actions=[],
+                        source=AlertSource(name=db_a.source, type="Official"),
+                        status=db_a.status
+                    ))
+        except Exception as e:
+            pass # Logger missing but safe to pass
+
+        # 2. Dynamic WeatherGPT alerts
         if lat is None or lon is None:
             return alerts # Cannot generate location-based alerts without coordinates
             

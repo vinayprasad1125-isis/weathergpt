@@ -28,6 +28,7 @@ class AppLocalizations {
       'chat': 'Chat',
       'home': 'Home',
       'more': 'More',
+      'news': 'News',
       'languageSelection': 'Language Selection',
     },
     'hi': {
@@ -46,6 +47,7 @@ class AppLocalizations {
       'chat': 'चैट',
       'home': 'होम',
       'more': 'अधिक',
+      'news': 'समाचार',
       'languageSelection': 'भाषा चयन',
     },
     'ta': {
@@ -64,6 +66,7 @@ class AppLocalizations {
       'chat': 'அரட்டை',
       'home': 'முகப்பு',
       'more': 'மேலும்',
+      'news': 'செய்திகள்',
       'languageSelection': 'மொழி தேர்வு',
     },
   };

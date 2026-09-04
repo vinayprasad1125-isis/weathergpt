@@ -11,11 +11,13 @@ import 'screens/map_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/advisories_screen.dart';
 import 'screens/aviation_screen.dart';
+import 'screens/news_screen.dart';
 import 'screens/login_screen.dart';
 import 'widgets/headers.dart';
 import 'l10n/l10n.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/push_notification_service.dart';
+import 'firebase_options.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -23,7 +25,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     await PushNotificationService.initialize();
   } catch (e) {
     debugPrint("Firebase initialization failed: $e");
@@ -87,14 +91,15 @@ class _MainNavigatorState extends State<MainNavigator> {
   int _currentIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
+  List<Widget> get _screens => [
+    HomeScreen(onNavigateToTab: _navigate),
     const MapScreen(),
     const ForecastScreen(),
     const AlertsScreen(),
     const AviationScreen(),
     const ClimateScreen(),
     const AdvisoriesScreen(),
+    const NewsScreen(),
     const SettingsScreen(),
   ];
 
@@ -166,7 +171,8 @@ class _MainNavigatorState extends State<MainNavigator> {
                     _DrawerItem(icon: LucideIcons.planeTakeoff, label: 'Aviation Weather', selected: _currentIndex == 4, onTap: () => _navigate(4)),
                     _DrawerItem(icon: LucideIcons.barChart2, label: l10n.get('climate'), selected: _currentIndex == 5, onTap: () => _navigate(5)),
                     _DrawerItem(icon: LucideIcons.bookOpen, label: l10n.get('advisories'), selected: _currentIndex == 6, onTap: () => _navigate(6)),
-                    _DrawerItem(icon: LucideIcons.settings, label: l10n.get('settings'), selected: _currentIndex == 7, onTap: () => _navigate(7)),
+                    _DrawerItem(icon: LucideIcons.newspaper, label: l10n.get('news'), selected: _currentIndex == 7, onTap: () => _navigate(7)),
+                    _DrawerItem(icon: LucideIcons.settings, label: l10n.get('settings'), selected: _currentIndex == 8, onTap: () => _navigate(8)),
                     const Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Divider()),
                     _DrawerItem(
                       icon: LucideIcons.globe,

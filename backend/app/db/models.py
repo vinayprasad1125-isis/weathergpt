@@ -86,6 +86,7 @@ class Alert(Base):
     status = Column(String, index=True)
     location_id = Column(Integer, ForeignKey("locations.id"))
     headline = Column(String)
+    area_desc = Column(String, nullable=True)   # CAP areaDesc e.g. "23 districts of Rajasthan"
     description = Column(String)
     issued_at = Column(DateTime)
     effective_from = Column(DateTime)

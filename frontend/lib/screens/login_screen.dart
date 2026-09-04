@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -21,11 +22,15 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
-        serverClientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
-        scopes: ['email', 'profile', 'openid'],
-      );
+      final GoogleSignIn googleSignIn = kIsWeb
+          ? GoogleSignIn(
+              clientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
+              scopes: ['email', 'profile', 'openid'],
+            )
+          : GoogleSignIn(
+              serverClientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
+              scopes: ['email', 'profile', 'openid'],
+            );
       
       final GoogleSignInAccount? account = await googleSignIn.signIn();
       

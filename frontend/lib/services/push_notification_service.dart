@@ -32,6 +32,10 @@ class PushNotificationService {
         debugPrint('FCM Token: $token');
         await sendTokenToBackend(token);
       }
+      
+      // Subscribe to weather alerts broadcast topic for SACHET alerts
+      await _messaging.subscribeToTopic('weather_alerts');
+      debugPrint('Subscribed to FCM topic: weather_alerts');
 
       // 3. Listen to token refreshes
       _messaging.onTokenRefresh.listen((newToken) {

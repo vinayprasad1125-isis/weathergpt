@@ -1,0 +1,36 @@
+import 'package:latlong2/latlong.dart';
+
+class AppConstants {
+  static final Map<String, LatLng> indianStates = {
+    'Andhra Pradesh': const LatLng(15.9129, 79.7400),
+    'Arunachal Pradesh': const LatLng(28.2180, 94.7278),
+    'Assam': const LatLng(26.2006, 92.9376),
+    'Bihar': const LatLng(25.0961, 85.3131),
+    'Chhattisgarh': const LatLng(21.2787, 81.8661),
+    'Delhi': const LatLng(28.6139, 77.2090),
+    'Goa': const LatLng(15.2993, 74.1240),
+    'Gujarat': const LatLng(22.2587, 71.1924),
+    'Haryana': const LatLng(29.0588, 76.0856),
+    'Himachal Pradesh': const LatLng(31.1048, 77.1665),
+    'Jammu and Kashmir': const LatLng(33.7782, 76.5762),
+    'Jharkhand': const LatLng(23.6102, 85.2799),
+    'Karnataka': const LatLng(15.3173, 75.7139),
+    'Kerala': const LatLng(10.8505, 76.2711),
+    'Madhya Pradesh': const LatLng(22.9734, 78.6569),
+    'Maharashtra': const LatLng(19.7515, 75.7139),
+    'Manipur': const LatLng(24.6637, 93.9063),
+    'Meghalaya': const LatLng(25.4670, 91.3662),
+    'Mizoram': const LatLng(23.1645, 92.9376),
+    'Nagaland': const LatLng(26.1584, 94.5624),
+    'Odisha': const LatLng(20.9517, 85.0985),
+    'Punjab': const LatLng(31.1471, 75.3412),
+    'Rajasthan': const LatLng(27.0238, 74.2179),
+    'Sikkim': const LatLng(27.5330, 88.5122),
+    'Tamil Nadu': const LatLng(11.1271, 78.6569),
+    'Telangana': const LatLng(17.3850, 78.4867),
+    'Tripura': const LatLng(23.8315, 91.2868),
+    'Uttar Pradesh': const LatLng(26.8467, 80.9462),
+    'Uttarakhand': const LatLng(30.3165, 78.0322),
+    'West Bengal': const LatLng(22.5726, 88.3639),
+  };
+}

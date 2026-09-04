@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import '../core/config.dart';
 import '../services/api_weather_service.dart';
 import '../services/location_store.dart';
 import '../services/geojson_helper.dart';
@@ -11,6 +14,7 @@ import '../models/models.dart';
 import '../widgets/headers.dart';
 import '../widgets/map_layer_selector.dart';
 import '../widgets/map_legend.dart';
+import '../core/constants.dart';
 import '../theme/app_theme.dart';
 
 class MapScreen extends StatefulWidget {
@@ -27,50 +31,29 @@ class _MapScreenState extends State<MapScreen> {
   GisLayerResult? _layerResult;
   bool _isLoading = false;
   String? _layerError;
-  LatLng _currentMapCenter = const LatLng(22.0, 80.0); // Center of India
-  
+  LatLng _currentMapCenter = const LatLng(22.0, 80.0);
+
   String? _selectedState;
   List<Polygon> _selectedStatePolygons = [];
   Map<String, List<List<LatLng>>> _allStatePolygons = {};
-  
+
   WeatherData? _currentLocationWeather;
 
-  final Map<String, LatLng> _indianStates = {
-    'Andhra Pradesh': const LatLng(15.9129, 79.7400),
-    'Arunachal Pradesh': const LatLng(28.2180, 94.7278),
-    'Assam': const LatLng(26.2006, 92.9376),
-    'Bihar': const LatLng(25.0961, 85.3131),
-    'Chhattisgarh': const LatLng(21.2787, 81.8661),
-    'Goa': const LatLng(15.2993, 74.1240),
-    'Gujarat': const LatLng(22.2587, 71.1924),
-    'Haryana': const LatLng(29.0588, 76.0856),
-    'Himachal Pradesh': const LatLng(31.1048, 77.1665),
-    'Jharkhand': const LatLng(23.6102, 85.2799),
-    'Karnataka': const LatLng(15.3173, 75.7139),
-    'Kerala': const LatLng(10.8505, 76.2711),
-    'Madhya Pradesh': const LatLng(22.9734, 78.6569),
-    'Maharashtra': const LatLng(19.7515, 75.7139),
-    'Manipur': const LatLng(24.6637, 93.9063),
-    'Meghalaya': const LatLng(25.4670, 91.3662),
-    'Mizoram': const LatLng(23.1645, 92.9376),
-    'Nagaland': const LatLng(26.1584, 94.5624),
-    'Odisha': const LatLng(20.9517, 85.0985),
-    'Punjab': const LatLng(31.1471, 75.3412),
-    'Rajasthan': const LatLng(27.0238, 74.2179),
-    'Sikkim': const LatLng(27.5330, 88.5122),
-    'Tamil Nadu': const LatLng(11.1271, 78.6569),
-    'Telangana': const LatLng(17.3850, 78.4867),
-    'Tripura': const LatLng(23.8315, 91.2868),
-    'Uttar Pradesh': const LatLng(26.8467, 80.9462),
-    'Uttarakhand': const LatLng(30.3165, 78.0322),
-    'West Bengal': const LatLng(22.5726, 88.3639),
-  };
+  // RainViewer — fetched live from API
+  String? _radarTileUrl;
+  bool _radarLoading = false;
+
+  // OWM tile overlay — only shown for temperature
+  bool _showOwmOverlay = false;
+
+  // ─── Init ──────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
     _loadAllPolygons();
     _fetchLocationWeather(lat: _currentMapCenter.latitude, lon: _currentMapCenter.longitude);
+    _fetchRadarTileUrl(); // pre-fetch so radar is instant when selected
   }
 
   Future<void> _loadAllPolygons() async {
@@ -88,13 +71,50 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  // ─── RainViewer live API ───────────────────────────────────────────────────
+
+  Future<void> _fetchRadarTileUrl() async {
+    if (_radarLoading) return;
+    setState(() => _radarLoading = true);
+    try {
+      final resp = await http.get(Uri.parse(Config.rainviewerApiUrl))
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body);
+        final past = (data['radar']['past'] as List?) ?? [];
+        if (past.isNotEmpty) {
+          final path = past.last['path'] as String;
+          // Use color scheme 4 (green->yellow->red) to match legend
+          final url = 'https://tilecache.rainviewer.com$path/256/{z}/{x}/{y}/4/1_1.png';
+          if (mounted) {
+            setState(() {
+              _radarTileUrl = url;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('RainViewer fetch error: $e');
+    } finally {
+      if (mounted) setState(() => _radarLoading = false);
+    }
+  }
+
+  // ─── Layer data fetching ───────────────────────────────────────────────────
+
   Future<void> _fetchLayerData(String layer) async {
-    if (layer == 'base' || layer == 'radar') {
+    // Layers that use raster tiles only — no choropleth fetch needed
+    final rasterOnly = {'base', 'satellite', 'radar', 'temperature'};
+    if (rasterOnly.contains(layer)) {
       setState(() {
         _layerResult = null;
         _layerError = null;
         _isLoading = false;
+        _showOwmOverlay = layer == 'temperature';
       });
+      if (layer == 'radar' && _radarTileUrl == null) {
+        _fetchRadarTileUrl();
+      }
       return;
     }
 
@@ -102,6 +122,7 @@ class _MapScreenState extends State<MapScreen> {
       _isLoading = true;
       _layerError = null;
       _layerResult = null;
+      _showOwmOverlay = false;
     });
 
     final result = await GisLayerService.fetchRegionalLayer(layer);
@@ -118,6 +139,8 @@ class _MapScreenState extends State<MapScreen> {
     setState(() => _currentLayer = layer);
     _fetchLayerData(layer);
   }
+
+  // ─── Location ─────────────────────────────────────────────────────────────
 
   Future<void> _recenter() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -156,10 +179,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onStateSelected(String? stateName) async {
-    if (stateName == null || !_indianStates.containsKey(stateName)) return;
+    if (stateName == null || !AppConstants.indianStates.containsKey(stateName)) return;
     setState(() {
       _selectedState = stateName;
-      _currentMapCenter = _indianStates[stateName]!;
+      _currentMapCenter = AppConstants.indianStates[stateName]!;
       _selectedStatePolygons = [];
     });
     _mapController.move(_currentMapCenter, 6.5);
@@ -168,13 +191,13 @@ class _MapScreenState extends State<MapScreen> {
       lat: _currentMapCenter.latitude,
       lon: _currentMapCenter.longitude,
     );
-    
+
     final rings = _allStatePolygons[stateName] ?? [];
     if (mounted && _selectedState == stateName) {
       setState(() {
         _selectedStatePolygons = rings.map<Polygon>((ring) => Polygon(
           points: ring,
-          color: AppColors.primary.withOpacity(0.0), // No fill, we just want border
+          color: AppColors.primary.withOpacity(0.0),
           borderColor: AppColors.primary,
           borderStrokeWidth: 3.0,
         )).toList();
@@ -182,30 +205,19 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  // ─── Color helpers ────────────────────────────────────────────────────────
-
-  Widget _metric(IconData icon, String value) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(icon, size: 13, color: AppColors.primary),
-      const SizedBox(width: 3),
-      Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-    ],
-  );
-
-  // ─── Empty / error state overlay ────────────────────────────────────────────────────────
+  // ─── Color helpers ─────────────────────────────────────────────────────────
 
   Color _temperatureColor(double v) {
-    if (v >= 42) return const Color(0xFF4A0000); // Very deep, dark red
-    if (v >= 38) return const Color(0xFFB30000); // Dark red
-    if (v >= 34) return const Color(0xFFFF0000); // Bright pure red
-    if (v >= 30) return const Color(0xFFFF5500); // Vibrant orange
-    if (v >= 26) return const Color(0xFFFFCC00); // Bright yellow
-    if (v >= 22) return const Color(0xFF99FF00); // Bright yellow-green
-    if (v >= 18) return const Color(0xFF00FF44); // Bright green
-    if (v >= 14) return const Color(0xFF00FFFF); // Cyan
-    if (v >= 10) return const Color(0xFF0066FF); // Bright blue
-    return const Color(0xFF000080);              // Deep navy blue
+    if (v >= 42) return const Color(0xFF4A0000);
+    if (v >= 38) return const Color(0xFFB30000);
+    if (v >= 34) return const Color(0xFFFF0000);
+    if (v >= 30) return const Color(0xFFFF5500);
+    if (v >= 26) return const Color(0xFFFFCC00);
+    if (v >= 22) return const Color(0xFF99FF00);
+    if (v >= 18) return const Color(0xFF00FF44);
+    if (v >= 14) return const Color(0xFF00FFFF);
+    if (v >= 10) return const Color(0xFF0066FF);
+    return const Color(0xFF000080);
   }
 
   Color _rainfallColor(double v) {
@@ -225,45 +237,92 @@ class _MapScreenState extends State<MapScreen> {
     return const Color(0xFF90EE90);
   }
 
+  Color _humidityColor(double v) {
+    if (v >= 90) return const Color(0xFF00008B);
+    if (v >= 75) return const Color(0xFF0000FF);
+    if (v >= 50) return const Color(0xFF00BFFF);
+    if (v >= 25) return const Color(0xFF90EE90);
+    return const Color(0xFFFFFACD);
+  }
+
+  Color _pressureColor(double v) {
+    if (v >= 1030) return const Color(0xFF00008B);
+    if (v >= 1020) return const Color(0xFF00BFFF);
+    if (v >= 1010) return const Color(0xFFFFD700);
+    if (v >= 1000) return const Color(0xFFFF8C00);
+    return const Color(0xFF8B0000);
+  }
+
+  Color _uvColor(double v) {
+    if (v >= 11) return const Color(0xFF9400D3);
+    if (v >= 8)  return const Color(0xFFFF0000);
+    if (v >= 6)  return const Color(0xFFFF8C00);
+    if (v >= 3)  return const Color(0xFFFFFF00);
+    return const Color(0xFF00CC00);
+  }
+
+  Color _cloudColor(double v) {
+    if (v >= 90) return const Color(0xFF2F2F3F);
+    if (v >= 70) return const Color(0xFF505060);
+    if (v >= 50) return const Color(0xFF708090);
+    if (v >= 25) return const Color(0xFFB0C4DE);
+    return const Color(0xFF87CEEB);
+  }
+
   Color _colorForLayer(GisPoint pt) {
     switch (_currentLayer) {
-      case 'temperature': return _temperatureColor(pt.value);
-      case 'rainfall':    return _rainfallColor(pt.value);
-      case 'wind':        return _windColor(pt.value);
+      case 'temperature':   return _temperatureColor(pt.value);
+      case 'rainfall':
+      case 'precipitation': return _rainfallColor(pt.value);
+      case 'wind':          return _windColor(pt.value);
+      case 'humidity':      return _humidityColor(pt.value);
+      case 'pressure':      return _pressureColor(pt.value);
+      case 'uv_index':      return _uvColor(pt.value);
+      case 'cloud_cover':   return _cloudColor(pt.value);
       case 'cyclones':
-      case 'flood':       return Colors.red.shade700;
-      default: return AppColors.primary;
+      case 'flood':         return Colors.red.shade700;
+      default:              return AppColors.primary;
     }
   }
 
-  // ─── Build Choropleth Polygons ───────────────────────────────────────────
+  // ─── Build base tile URL ───────────────────────────────────────────────────
+
+  String get _baseTileUrl {
+    switch (_currentLayer) {
+      case 'satellite':
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case 'base':
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+      default:
+        // Highly subdued dark gray map for all weather visualizations
+        // This ensures the meteorological data is the dominant visual element
+        return 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+    }
+  }
+
+  // ─── Choropleth ───────────────────────────────────────────────────────────
 
   List<Polygon> _buildChoroplethPolygons() {
     final result = _layerResult;
-    if (result == null || result.points.isEmpty || _currentLayer == 'base' || _currentLayer == 'radar') {
-      return [];
+    final noChoro = {'base', 'satellite', 'radar', 'temperature'};
+    if (result == null || result.points.isEmpty || noChoro.contains(_currentLayer)) {
+      return _selectedStatePolygons;
     }
 
-    // Map stateName to GisPoint for O(1) lookup
     final pointsMap = {for (var pt in result.points) pt.stateName: pt};
     List<Polygon> polygons = [];
 
-    // Iterate through all states we parsed from geojson
     for (var entry in _allStatePolygons.entries) {
       final stateName = entry.key;
       final rings = entry.value;
       final pt = pointsMap[stateName];
 
-      Color fillColor = Colors.transparent;
-      Color borderColor = Colors.grey.withOpacity(0.5);
+      Color fillColor = Colors.grey.withOpacity(0.2);
+      Color borderColor = Colors.grey.withOpacity(0.4);
 
       if (pt != null) {
-        // If we have data for this state, fill it with the thematic color
-        fillColor = _colorForLayer(pt).withOpacity(0.45); // 45% opacity to show basemap clearly
-        borderColor = Colors.white.withOpacity(0.3);
-      } else {
-        // No data for this state
-        fillColor = Colors.grey.withOpacity(0.2);
+        fillColor = _colorForLayer(pt).withOpacity(0.55);
+        borderColor = Colors.white.withOpacity(0.25);
       }
 
       for (var ring in rings) {
@@ -275,19 +334,19 @@ class _MapScreenState extends State<MapScreen> {
         ));
       }
     }
-    
-    // Add the currently selected state highlight border on top if any
+
+    // Selected state highlight on top
     if (_selectedStatePolygons.isNotEmpty) {
       polygons.addAll(_selectedStatePolygons);
     }
-    
+
     return polygons;
   }
 
-  // ─── Empty / error state overlay ─────────────────────────────────────────
+  // ─── Status overlay ────────────────────────────────────────────────────────
 
   Widget? _buildStatusOverlay() {
-    if (_isLoading) {
+    if (_isLoading || _radarLoading) {
       return Positioned.fill(
         child: Center(
           child: Container(
@@ -301,7 +360,10 @@ class _MapScreenState extends State<MapScreen> {
               children: [
                 const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
                 const SizedBox(width: 12),
-                Text('Loading $_currentLayer data…', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                Text(
+                  _radarLoading ? 'Fetching radar…' : 'Loading ${_currentLayer.replaceAll('_', ' ')} data…',
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                ),
               ],
             ),
           ),
@@ -320,34 +382,53 @@ class _MapScreenState extends State<MapScreen> {
               color: Colors.black.withOpacity(0.70),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(
-              _layerError!,
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+            child: Text(_layerError!, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+
+    if (_currentLayer == 'radar' && _radarTileUrl != null) {
+      return Positioned(
+        bottom: 100,
+        left: 0, right: 0,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.indigo.shade800.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.radar, color: Colors.white, size: 15),
+                const SizedBox(width: 7),
+                const Text('Live radar · RainViewer', style: TextStyle(color: Colors.white, fontSize: 12)),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: _fetchRadarTileUrl,
+                  child: const Text('↻ Refresh', style: TextStyle(color: Colors.lightBlueAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
             ),
           ),
         ),
       );
     }
 
-    if (_currentLayer == 'radar') {
+    if (_currentLayer == 'satellite') {
       return Positioned(
-        bottom: 90,
+        bottom: 100,
         left: 0, right: 0,
         child: Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.indigo.shade800.withOpacity(0.85),
+              color: Colors.black.withOpacity(0.55),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.radar, color: Colors.white, size: 16),
-                SizedBox(width: 8),
-                Text('Radar overlay from RainViewer', style: TextStyle(color: Colors.white, fontSize: 12)),
-              ],
-            ),
+            child: const Text('🛰 ESRI World Imagery satellite', style: TextStyle(color: Colors.white, fontSize: 12)),
           ),
         ),
       );
@@ -356,13 +437,26 @@ class _MapScreenState extends State<MapScreen> {
     return null;
   }
 
+  // ─── Weather bubble ────────────────────────────────────────────────────────
+
+  Widget _metric(IconData icon, String value) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 13, color: AppColors.primary),
+      const SizedBox(width: 3),
+      Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+    ],
+  );
+
+  // ─── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final choroplethPolygons = _buildChoroplethPolygons();
     final statusOverlay = _buildStatusOverlay();
 
     return Scaffold(
-      appBar: const AppHeader(title: 'GIS Map'),
+      appBar: const AppHeader(title: 'Weather Map'),
       body: Stack(
         children: [
           // ── Main Map ──────────────────────────────────────────────────────
@@ -370,44 +464,61 @@ class _MapScreenState extends State<MapScreen> {
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _currentMapCenter,
-              initialZoom: 5.0, // Zoomed out to show all of India
+              initialZoom: 5.0,
               backgroundColor: const Color(0xFF1a1a2e),
             ),
             children: [
-              // Dark base map (CartoDB Dark Matter) — shows borders & labels
+              // Base tile — switches by layer
+              // Base tile — switches by layer
               TileLayer(
-                urlTemplate: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                urlTemplate: _baseTileUrl,
                 userAgentPackageName: 'com.imd.weathergpt',
-              ),
-              // OpenWeatherMap temperature heatmap overlay
-              TileLayer(
-                urlTemplate: 'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=2368d7321df517b74335df5232c7e298',
-                userAgentPackageName: 'com.imd.weathergpt',
-                tileDisplay: const TileDisplay.instantaneous(opacity: 0.75),
+                tileDisplay: const TileDisplay.instantaneous(),
               ),
 
-              // Radar tile overlay
-              if (_currentLayer == 'radar')
+              // OWM temperature heatmap raster overlay (only for temperature layer)
+              if (_showOwmOverlay && Config.owmApiKey.isNotEmpty)
                 TileLayer(
-                  urlTemplate: 'https://tilecache.rainviewer.com/v2/radar/0/{z}/{x}/{y}/2/1_1.png',
+                  urlTemplate: 'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${Config.owmApiKey}',
                   userAgentPackageName: 'com.imd.weathergpt',
+                  tileDisplay: const TileDisplay.instantaneous(opacity: 1.0),
+                  maxNativeZoom: 10, // Prevent 404s/broken tiles when zooming in closely
                 ),
 
-              // Choropleth Polygons
+
+              // RainViewer radar overlay (only for radar layer, live URL)
+              if (_currentLayer == 'radar' && _radarTileUrl != null)
+                TileLayer(
+                  urlTemplate: _radarTileUrl!,
+                  userAgentPackageName: 'com.imd.weathergpt',
+                  tileDisplay: const TileDisplay.instantaneous(opacity: 1.0),
+                  maxNativeZoom: 7, // RainViewer only serves radar tiles up to zoom 7
+                ),
+
+              // Reference Label Map (Borders, States, Cities) — rendered ON TOP of weather layers
+              if (_currentLayer != 'base' && _currentLayer != 'satellite')
+                TileLayer(
+                  urlTemplate: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+                  userAgentPackageName: 'com.imd.weathergpt',
+                  tileDisplay: const TileDisplay.instantaneous(),
+                ),
+
+              // Choropleth polygons
               if (choroplethPolygons.isNotEmpty)
                 PolygonLayer(polygons: choroplethPolygons),
-                
-              // If base map, just show selected state border
-              if (_currentLayer == 'base' && _selectedStatePolygons.isNotEmpty)
+
+              // Base / satellite — just show selected state border if any
+              if ((_currentLayer == 'base' || _currentLayer == 'satellite') &&
+                  _selectedStatePolygons.isNotEmpty)
                 PolygonLayer(polygons: _selectedStatePolygons),
-                
-              // Location marker with attached weather bubble
+
+              // Weather marker bubble
               if (_currentLocationWeather != null)
                 MarkerLayer(
                   markers: [
                     Marker(
                       point: _currentMapCenter,
-                      width: 180,
+                      width: 190,
                       height: 80,
                       alignment: Alignment.topCenter,
                       child: Column(
@@ -419,9 +530,7 @@ class _MapScreenState extends State<MapScreen> {
                               color: Theme.of(context).cardTheme.color ?? Colors.white,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: AppColors.primary.withOpacity(0.5)),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
-                              ],
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -457,7 +566,7 @@ class _MapScreenState extends State<MapScreen> {
 
           // ── Overlays ──────────────────────────────────────────────────────
 
-          // Layer type selector (top left)
+          // Layer selector (top left)
           Positioned(
             top: 16,
             left: 16,
@@ -484,7 +593,7 @@ class _MapScreenState extends State<MapScreen> {
                   value: _selectedState,
                   icon: const Icon(LucideIcons.chevronDown, size: 20),
                   onChanged: _onStateSelected,
-                  items: _indianStates.keys.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  items: AppConstants.indianStates.keys.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 ),
               ),
             ),
@@ -497,10 +606,10 @@ class _MapScreenState extends State<MapScreen> {
             child: MapLegend(layerType: _currentLayer),
           ),
 
-          // Status / error overlay
+          // Status overlay
           if (statusOverlay != null) statusOverlay,
 
-          // Recenter button (bottom right)
+          // Recenter FAB (bottom right)
           Positioned(
             bottom: 20,
             right: 20,
