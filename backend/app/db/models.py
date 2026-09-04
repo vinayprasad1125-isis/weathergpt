@@ -9,6 +9,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     preferred_language = Column(String, default="en")
+    fcm_token = Column(String, nullable=True)
     conversations = relationship("Conversation", back_populates="user")
 
 class DBLocation(Base):

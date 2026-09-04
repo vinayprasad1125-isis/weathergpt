@@ -15,3 +15,8 @@ paho-mqtt
 redis
 openai
 google-auth
+prometheus-fastapi-instrumentator
+PyJWT
+bcrypt
+python-multipart
+firebase-admin==6.4.0

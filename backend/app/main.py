@@ -1,12 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import health, weather, chat, nwp, alerts, location, advisory, climate, gis, system, auth, aviation
+from app.api.routes import health, weather, chat, nwp, alerts, location, advisory, climate, gis, system, auth, aviation, users
 from app.db.database import engine, Base
 import logging
+from prometheus_fastapi_instrumentator import Instrumentator
 
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="WeatherGPT API")
+
+# Setup Prometheus metrics endpoint
+Instrumentator().instrument(app).expose(app)
 
 @app.on_event("startup")
 async def startup():
@@ -23,6 +27,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
+app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(weather.router, prefix="/api/v1/weather", tags=["Weather"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(nwp.router, prefix="/api/v1/nwp", tags=["NWP"])

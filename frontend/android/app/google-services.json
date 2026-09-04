@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "420920598700",
+    "project_id": "weathergpt-afbe0",
+    "storage_bucket": "weathergpt-afbe0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420920598700:android:deec8e6c394c7b75fa7f09",
+        "android_client_info": {
+          "package_name": "com.example.weathergpt_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCI06lhotjQH365uY0tRJrRkzWpDN5bPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

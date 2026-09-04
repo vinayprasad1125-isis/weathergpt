@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../core/config.dart';
 import '../main.dart'; // To access MainNavigator
 
 class LoginScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         clientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
+        serverClientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
         scopes: ['email', 'profile', 'openid'],
       );
       
@@ -35,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (idToken != null || accessToken != null) {
           // Send token(s) to our FastAPI backend
           final response = await http.post(
-            Uri.parse('http://localhost:8000/api/v1/auth/google'),
+            Uri.parse('${Config.apiBaseUrl}/api/v1/auth/google'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'id_token': idToken,

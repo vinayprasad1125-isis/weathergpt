@@ -18,9 +18,11 @@ dependencies:
   latlong2: ^0.10.1
   speech_to_text: ^7.4.0
   flutter_tts: ^4.2.5
-  permission_handler: ^13.0.1
+  permission_handler: 11.3.1
   geolocator: ^14.0.3
   google_sign_in: ^6.2.1
+  firebase_core: ^4.14.0
+  firebase_messaging: ^16.6.0
 
 dev_dependencies:
   flutter_test:

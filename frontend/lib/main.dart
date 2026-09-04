@@ -14,10 +14,21 @@ import 'screens/aviation_screen.dart';
 import 'screens/login_screen.dart';
 import 'widgets/headers.dart';
 import 'l10n/l10n.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'services/push_notification_service.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await Firebase.initializeApp();
+    await PushNotificationService.initialize();
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
+  
   runApp(const WeatherGPTApp());
 }
 

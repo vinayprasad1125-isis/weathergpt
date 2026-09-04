@@ -47,3 +47,4 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 backend/client_secret_*.json
+backend/firebase-adminsdk.json
