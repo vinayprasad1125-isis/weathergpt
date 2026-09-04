@@ -1,9 +1,14 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class Config {
   // Use Mac's local WiFi IP so the Android app can connect over WiFi (no USB required).
-  // Run `ipconfig getifaddr en0` on Mac to get this IP.
   // Both Mac and Android must be on the same WiFi network.
   static String get apiBaseUrl {
-    return 'http://10.45.253.73:8000';
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8000';
+    }
+    // Fallback for Android/iOS - updated to current local IP (192.168.1.4)
+    return 'http://192.168.1.4:8000';
   }
 
   static const String _envOwmApiKey = String.fromEnvironment(

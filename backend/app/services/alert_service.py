@@ -44,7 +44,9 @@ class AlertService:
                         status=db_a.status
                     ))
         except Exception as e:
-            pass # Logger missing but safe to pass
+            print("ERROR IN GET ACTIVE ALERTS:", e)
+            import traceback
+            traceback.print_exc()
 
         # 2. Dynamic WeatherGPT alerts
         if lat is None or lon is None:

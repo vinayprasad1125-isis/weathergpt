@@ -16,70 +16,67 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
+  final GoogleSignIn _googleSignIn = kIsWeb
+      ? GoogleSignIn(
+          clientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
+          scopes: ['email', 'profile', 'openid'],
+        )
+      : GoogleSignIn(
+          serverClientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
+          scopes: ['email', 'profile', 'openid'],
+        );
+
   Future<void> _handleSignIn() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (_isLoading) return;
+
+    setState(() => _isLoading = true);
 
     try {
-      final GoogleSignIn googleSignIn = kIsWeb
-          ? GoogleSignIn(
-              clientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
-              scopes: ['email', 'profile', 'openid'],
-            )
-          : GoogleSignIn(
-              serverClientId: '201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com',
-              scopes: ['email', 'profile', 'openid'],
-            );
-      
-      final GoogleSignInAccount? account = await googleSignIn.signIn();
-      
+      // On GIS web, signIn() can hang forever if the popup is blocked.
+      // A 60s timeout ensures the loading state always resets.
+      final GoogleSignInAccount? account = await _googleSignIn
+          .signIn()
+          .timeout(const Duration(seconds: 60), onTimeout: () => null);
       if (account != null) {
-        final GoogleSignInAuthentication auth = await account.authentication;
-        final String? idToken = auth.idToken;
-        final String? accessToken = auth.accessToken;
-        
-        if (idToken != null || accessToken != null) {
-          // Send token(s) to our FastAPI backend
-          final response = await http.post(
-            Uri.parse('${Config.apiBaseUrl}/api/v1/auth/google'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'id_token': idToken,
-              'access_token': accessToken,
-            }),
-          );
-
-          if (response.statusCode == 200) {
-            final data = jsonDecode(response.body);
-            final String accessToken = data['access_token'];
-            
-            // Here you would normally save the access_token securely
-            // e.g. using flutter_secure_storage or shared_preferences
-            print('Successfully logged in. Access Token: $accessToken');
-            
-            // Navigate to main app
-            if (mounted) {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const MainNavigator()),
-              );
-            }
-          } else {
-            _showError('Backend authentication failed: ${response.body}');
-          }
-        } else {
-          _showError('Failed to get any token from Google.');
-        }
+        await _authenticateWithBackend(account);
       }
     } catch (error) {
-      print('Sign in error: $error');
-      _showError('Sign in failed: $error');
+      if (error.toString().contains('popup_closed')) {
+        debugPrint('User closed the sign in popup');
+      } else {
+        debugPrint('Sign in error: $error');
+        _showError('Sign in failed: $error');
+      }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _authenticateWithBackend(GoogleSignInAccount account) async {
+    try {
+      final GoogleSignInAuthentication auth = await account.authentication;
+      final response = await http.post(
+        Uri.parse('${Config.apiBaseUrl}/api/v1/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id_token': auth.idToken,
+          'access_token': auth.accessToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainNavigator()),
+          );
+        }
+      } else {
+        _showError('Backend authentication failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      _showError('Authentication failed: $e');
     }
   }
 
