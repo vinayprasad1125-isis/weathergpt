@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "openai/gpt-oss-20b"
     LLM_PROVIDER: str = "groq"
     
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = "201659855993-tb1pdcdd2tv753h19u7c82qdhpgo4mo5.apps.googleusercontent.com"
+    
     # MQTT Config
     MQTT_BROKER_URL: str = "localhost"
     MQTT_BROKER_PORT: int = 1883

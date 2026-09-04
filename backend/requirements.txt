@@ -14,3 +14,4 @@ psycopg2-binary
 paho-mqtt
 redis
 openai
+google-auth

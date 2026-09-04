@@ -12,6 +12,7 @@ class WeatherApiClient:
     def __init__(self):
         self.weather_url = settings.WEATHER_API_BASE_URL
         self.geo_url = settings.GEOCODING_API_BASE_URL
+        self.marine_url = "https://marine-api.open-meteo.com/v1"
         self.client = httpx.AsyncClient(timeout=10.0)
         
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -123,6 +124,41 @@ class WeatherApiClient:
             return data
         except httpx.RequestError:
             raise HTTPException(status_code=502, detail="Weather provider unavailable")
+
+    async def get_marine_weather(self, lat: float, lon: float):
+        cache_key = f"marine:{round(lat, 4)}:{round(lon, 4)}"
+        if self.redis:
+            try:
+                cached = await self.redis.get(cache_key)
+                if cached:
+                    return json.loads(cached)
+            except Exception:
+                pass
+
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "current": "wave_height,wave_direction,wave_period,ocean_current_velocity,ocean_current_direction,sea_surface_temperature",
+            "hourly": "wave_height,wave_direction,wave_period,ocean_current_velocity,ocean_current_direction,sea_surface_temperature,swell_wave_height,swell_wave_direction,swell_wave_period",
+            "daily": "wave_height_max,wave_direction_dominant,swell_wave_height_max,swell_wave_direction_dominant",
+            "timezone": "auto"
+        }
+        try:
+            response = await self.client.get(f"{self.marine_url}/marine", params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            if self.redis:
+                try:
+                    await self.redis.set(cache_key, json.dumps(data), ex=1800) # Cache for 30 mins
+                except Exception:
+                    pass
+                    
+            return data
+        except httpx.RequestError:
+            return {"current": {}, "hourly": {}, "daily": {}}
+        except httpx.HTTPStatusError:
+            return {"current": {}, "hourly": {}, "daily": {}}
 
     async def close(self):
         await self.client.aclose()

@@ -33,6 +33,8 @@ Rules:
 - If the user asks about pesticide spraying, crop spraying, farm spraying → set intent="advisory", user_type="farmer", advisory_type="pesticide_spraying"
 - If the user asks about irrigation, watering crops → set intent="advisory", user_type="farmer", advisory_type="irrigation"
 - If the user asks about flying, aviation, flight conditions → set intent="advisory", user_type="pilot", advisory_type="flight_briefing"
+- If the user asks about fishing, marine, sea, sailing, boat, waves → set intent="advisory", user_type="marine", advisory_type="marine"
+- If the user asks about traveling or routing from one location to another (e.g., "travel from Chennai to Delhi", "route to X") → set intent="route_query"
 - If the user asks about alerts, warnings, cyclone, flood, storm → set intent="alerts", data_source="weather_forecast"
 - For any advisory intent, set data_source="weather_forecast"
 - For current weather questions → set data_source="current_weather"
@@ -64,7 +66,9 @@ User Message: {message}
         advisory_type = None
         data_source = "current_weather"
 
-        if any(w in msg for w in ["pesticide", "spray", "spraying", "fungicide", "herbicide"]):
+        if any(w in msg for w in ["travel from", "route to", "go from", "journey from"]):
+            intent, data_source = "route_query", "weather_forecast"
+        elif any(w in msg for w in ["pesticide", "spray", "spraying", "fungicide", "herbicide"]):
             intent, user_type, advisory_type, data_source = "advisory", "farmer", "pesticide_spraying", "weather_forecast"
         elif any(w in msg for w in ["irrigat", "water my crop", "water crops"]):
             intent, user_type, advisory_type, data_source = "advisory", "farmer", "irrigation", "weather_forecast"
@@ -213,9 +217,13 @@ Weather Data:
         summary = advisory_data.get("summary", "")
         factors = advisory_data.get("factors", [])
         recommendations = advisory_data.get("recommendations", [])
-
-        factors_text = "\n".join(f"  - {f['parameter']}: {f['value']}" for f in factors)
-        recommendations_text = "\n".join(f"  {i+1}. {r}" for i, r in enumerate(recommendations))
+        assessment = advisory_data.get("assessment")
+        forecast_time = advisory_data.get("forecast_time", "Current conditions")
+        source = advisory_data.get("source", "Weather API")
+        
+        marine_factors = [f for f in factors if f.get("category") == "marine"]
+        weather_factors = [f for f in factors if f.get("category") == "weather"]
+        general_factors = [f for f in factors if f.get("category", "general") == "general"]
 
         prompt = f"""
 You are WeatherGPT, a professional weather advisory system for India.
@@ -223,31 +231,64 @@ CRITICAL INSTRUCTION: Respond in the language indicated by this code: {language}
 
 STRICT RULES:
 - You are given PRE-EVALUATED advisory data. Do NOT change, invent, or contradict any values.
-- Do NOT fabricate any weather readings. Use ONLY the values provided in "Retrieved Weather Factors".
-- If a factor is listed as "unavailable", acknowledge it honestly — do NOT substitute a guess.
-- Format your response clearly with emoji headers as shown below.
-- Conclude with the exact verdict from the recommendations.
+- Do NOT fabricate any weather readings. Use ONLY the values provided.
+- Format your response EXACTLY following the structure below.
+- DO NOT use asterisks (**) or markdown formatting for bold text. Keep it plain text.
 
 ADVISORY DOMAIN: {domain}
-RULE ENGINE SUMMARY: {summary}
+LOCATION: {advisory_data.get('location', {}).get('name', 'Unknown')}
+FORECAST TIME: {forecast_time}
+SOURCE: {source}
 
-RETRIEVED WEATHER FACTORS (REAL DATA — DO NOT MODIFY):
-{factors_text}
+MARINE FACTORS (IF ANY):
+{str(marine_factors)}
 
-RULE ENGINE RECOMMENDATIONS:
-{recommendations_text}
+WEATHER FACTORS (IF ANY):
+{str(weather_factors)}
+
+GENERAL FACTORS (IF ANY):
+{str(general_factors)}
+
+ASSESSMENT DATA (IF ANY):
+{str(assessment)}
+
+RECOMMENDATIONS:
+{str(recommendations)}
 
 FORMAT YOUR RESPONSE EXACTLY AS:
-🌾 [Domain] Advisory
+🌊 [Domain Name] Advisory
+[Location]
+Forecast: [FORECAST TIME]
 
-📍 Location: [from factors if available]
-🕐 Time: Current conditions
+[If there are marine factors, output:]
+MARINE CONDITIONS
+[List each marine factor (e.g. Wave height: 0.64 m)]
 
-Then list each retrieved weather factor with its value, one per line.
-Then state the recommendation verdict clearly.
-Then explain in 2-3 sentences why the conditions are or are not suitable, using the actual values above.
-End with: "⚠️ Always recheck the latest forecast before taking action."
-DO NOT use asterisks (**) or markdown formatting for bold text. Keep it plain text.
+[If there are weather factors, output:]
+WEATHER CONDITIONS
+[List each weather factor (e.g. Wind speed: 3.2 km/h)]
+
+[If there are general factors and NO marine/weather separation, output:]
+CONDITIONS
+[List each general factor]
+
+[If there is an ASSESSMENT block, output:]
+ASSESSMENT
+[🟢/🟡/🟠/🔴] [category from assessment] Conditions
+
+Reason:
+[Write 2-3 sentences summarizing the reasons in the assessment]
+
+⚠️ IMPORTANT
+[Write 2-3 sentences summarizing the limitations in the assessment. Ensure you mention it is a forecast-based assessment, not a safety clearance.]
+[End of ASSESSMENT block]
+
+[If there are RECOMMENDATIONS and NO assessment block, output:]
+RECOMMENDATIONS
+[List the recommendations]
+
+Source:
+[SOURCE]
 """
         try:
             response = self.client.chat.completions.create(

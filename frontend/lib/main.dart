@@ -11,8 +11,11 @@ import 'screens/map_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/advisories_screen.dart';
 import 'screens/aviation_screen.dart';
+import 'screens/login_screen.dart';
 import 'widgets/headers.dart';
 import 'l10n/l10n.dart';
+
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 void main() {
   runApp(const WeatherGPTApp());
@@ -42,6 +45,7 @@ class _WeatherGPTAppState extends State<WeatherGPTApp> {
         setThemeMode: setThemeMode,
         child: MaterialApp(
           title: 'WeatherGPT',
+          scaffoldMessengerKey: rootScaffoldMessengerKey,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: _themeMode,
@@ -54,7 +58,7 @@ class _WeatherGPTAppState extends State<WeatherGPTApp> {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: const MainNavigator(),
+          home: const LoginScreen(),
         ),
       ),
     );

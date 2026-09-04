@@ -52,10 +52,24 @@ class AlertCard extends StatelessWidget {
               children: [
                 Icon(LucideIcons.alertTriangle, color: bgColor, size: 20),
                 const SizedBox(width: AppSpacing.xs),
-                Text(
-                  '${alert.severity.toUpperCase()} WEATHER ALERT',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: bgColor),
+                Expanded(
+                  child: Text(
+                    '${alert.severity.toUpperCase()} WEATHER ALERT',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: bgColor),
+                  ),
                 ),
+                if (alert.isDemo)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'DEMO',
+                      style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.xs),

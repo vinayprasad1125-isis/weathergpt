@@ -30,6 +30,9 @@ class ClimateAnalyticsService:
         if not records:
             return None
             
+        # Ensure chronological order for proper charting and time-series analysis
+        records = sorted(records, key=lambda r: r.timestamp)
+            
         data_points = len(records)
         
         if req.analysis == "trend":
@@ -41,8 +44,11 @@ class ClimateAnalyticsService:
                 vals = [r.rainfall for r in records]
                 unit = "mm/year"
                 
+            # Use actual days since the first record as X to be mathematically robust
+            min_ts = records[0].timestamp
+            x = [(r.timestamp - min_ts).days for r in records]
             n = len(vals)
-            x = list(range(n))
+            
             mean_x = sum(x) / n
             mean_y = sum(vals) / n
             numerator = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, vals))

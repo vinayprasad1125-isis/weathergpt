@@ -7,6 +7,7 @@ import '../widgets/weather_card.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/alert_card.dart';
 import '../widgets/headers.dart';
+import '../widgets/weather_background.dart';
 import 'chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -72,9 +73,17 @@ class _HomeScreenState extends State<HomeScreen> {
         tooltip: 'Ask WeatherGPT',
         child: const Icon(LucideIcons.messageCircle, color: Colors.white, size: 26),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: WeatherBackground(
+              temperature: _weather?.currentTemp,
+            ),
+          ),
+          Positioned.fill(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.xl),
@@ -130,6 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 }

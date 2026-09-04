@@ -116,5 +116,8 @@ class WeatherService:
             daily=daily
         )
 
+    async def get_marine_weather(self, lat: float, lon: float) -> dict:
+        return await self.client.get_marine_weather(lat, lon)
+
     async def close(self):
         await self.client.close()

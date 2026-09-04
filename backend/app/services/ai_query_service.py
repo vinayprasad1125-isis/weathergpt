@@ -75,7 +75,17 @@ class AIQueryService:
         source = {}
 
         try:
-            if getattr(query, 'intent', '') == 'climate_analysis':
+            if getattr(query, 'intent', '') == 'route_query':
+                # Route Queries are not supported for marine/weather without actual route mapping
+                msg = (
+                    f"You're asking about traveling from/to {target_name}. "
+                    "However, marine conditions at a single port cannot determine if a voyage is safe. "
+                    "There is no simple direct ocean route available in my database, and marine weather varies along a route. "
+                    "I cannot provide a route clearance or feasibility assessment."
+                )
+                return ChatResponse(message=msg, query=query, source={"provider": "WeatherGPT System"})
+                
+            elif getattr(query, 'intent', '') == 'climate_analysis':
                 start_year = "2014-01-01" # Default MVP 10 years
                 end_year = "2023-12-31"
                 async with AsyncSessionLocal() as db:
@@ -98,7 +108,8 @@ class AIQueryService:
                 advisory_type = getattr(query, 'advisory_type', None)
                 adv_req = AdvisoryRequest(
                     domain=domain,
-                    location=AdvisoryRequestLocation(latitude=target_lat, longitude=target_lon)
+                    location=AdvisoryRequestLocation(latitude=target_lat, longitude=target_lon, name=target_name),
+                    time_range=query.time_range or "today"
                 )
                 adv_resp = await self.advisory_router.process_advisory(adv_req, advisory_type=advisory_type)
                 context_data = adv_resp.model_dump()

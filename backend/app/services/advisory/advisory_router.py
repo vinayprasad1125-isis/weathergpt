@@ -71,14 +71,25 @@ class AdvisoryRouter:
             logger.warning(f"Could not fetch forecast for advisory enrichment: {e}")
             weather_data["forecast"] = {}
 
+        if domain == "marine":
+            try:
+                marine_resp = await self.weather.get_marine_weather(lat=lat, lon=lon)
+                weather_data["marine"] = marine_resp
+            except Exception as e:
+                logger.warning(f"Could not fetch marine data: {e}")
+
         # Fetch alerts
         alerts_list = await self.alert.get_active_alerts(lat=lat, lon=lon)
         alerts_data = [a.model_dump() for a in alerts_list]
 
         service = self.domains[domain]
+        
+        # Determine base processing params
+        time_range = request.time_range.lower() if request.time_range else "today"
         return service.process(
             weather_data=weather_data,
             alerts=alerts_data,
-            location={"latitude": lat, "longitude": lon},
+            location={"latitude": lat, "longitude": lon, "name": request.location.name},
             advisory_type=advisory_type,
+            time_range=time_range
         )

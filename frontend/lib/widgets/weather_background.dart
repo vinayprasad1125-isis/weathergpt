@@ -10,8 +10,8 @@ enum WeatherAnimationState { snow, cloudy, mildSunny, extremeSunny }
 
 WeatherAnimationState getWeatherAnimation(int? temp) {
   if (temp == null) return WeatherAnimationState.cloudy;
-  if (temp < 23) return WeatherAnimationState.snow;
-  if (temp < 32) return WeatherAnimationState.cloudy;
+  if (temp < 20) return WeatherAnimationState.snow;
+  if (temp < 33) return WeatherAnimationState.cloudy;
   if (temp <= 40) return WeatherAnimationState.mildSunny;
   return WeatherAnimationState.extremeSunny;
 }
@@ -169,6 +169,7 @@ class _WeatherPainter extends CustomPainter {
       case WeatherAnimationState.cloudy:
         _paintCloudy(canvas, size);
         break;
+
       case WeatherAnimationState.mildSunny:
         _paintMildSunny(canvas, size);
         break;

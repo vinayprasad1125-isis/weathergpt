@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../services/demo_alert_manager.dart';
 import '../services/services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/alert_card.dart';
@@ -13,23 +14,49 @@ class AlertsScreen extends StatefulWidget {
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
+  List<WeatherAlert> _realAlerts = [];
   List<WeatherAlert> _alerts = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    DemoAlertManager.instance.unreadCount.addListener(_onNewDemoAlert);
     _loadAlerts();
   }
 
-  Future<void> _loadAlerts() async {
-    final alerts = await AlertService.getActiveAlerts();
+  @override
+  void dispose() {
+    DemoAlertManager.instance.unreadCount.removeListener(_onNewDemoAlert);
+    super.dispose();
+  }
+
+  void _onNewDemoAlert() {
     if (mounted) {
+      _combineAlerts();
+    }
+  }
+
+  Future<void> _loadAlerts() async {
+    _realAlerts = await AlertService.getActiveAlerts();
+    if (mounted) {
+      _combineAlerts();
       setState(() {
-        _alerts = alerts;
         _isLoading = false;
       });
     }
+  }
+
+  void _combineAlerts() {
+    // Clear unread count when viewed, but temporarily remove listener to avoid infinite loop
+    DemoAlertManager.instance.unreadCount.removeListener(_onNewDemoAlert);
+    DemoAlertManager.instance.unreadCount.value = 0;
+    DemoAlertManager.instance.unreadCount.addListener(_onNewDemoAlert);
+
+    final demoAlerts = DemoAlertManager.instance.demoAlerts;
+    setState(() {
+      _alerts = [...demoAlerts, ..._realAlerts];
+    });
   }
 
   @override

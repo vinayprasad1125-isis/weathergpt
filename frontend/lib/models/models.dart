@@ -110,6 +110,7 @@ class WeatherAlert {
   final String recommendedAction;
   final String source;
   final String status; // 'Active' | 'Resolved'
+  final bool isDemo;
 
   WeatherAlert({
     required this.id,
@@ -121,6 +122,7 @@ class WeatherAlert {
     required this.recommendedAction,
     required this.source,
     required this.status,
+    this.isDemo = false,
   });
 }
 
