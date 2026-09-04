@@ -8,6 +8,9 @@ import '../widgets/forecast_card.dart';
 import '../widgets/alert_card.dart';
 import '../widgets/headers.dart';
 import '../widgets/weather_background.dart';
+import '../widgets/weather_metrics_grid.dart';
+import '../widgets/daylight_track.dart';
+import '../widgets/hourly_ribbon.dart';
 import 'chat_screen.dart';
 
 // Callback to switch to the Alerts tab from the home screen
@@ -127,58 +130,54 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_weather != null) WeatherCard(data: _weather!),
-                  if (_alerts.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Recent Alerts',
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.text,
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () => widget.onNavigateToTab?.call(3),
-                                  child: Text(
-                                    'See all ${_alerts.length} alerts →',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w500,
+                      if (_weather != null) ...[
+                        WeatherCard(data: _weather!),
+                        WeatherMetricsGrid(weather: _weather!),
+                        DaylightTrack(weather: _weather!),
+                      ],
+                      if (_forecast != null) ...[
+                        HourlyRibbon(hourly: _forecast!.hourly),
+                      ],
+                      if (_alerts.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Safety Briefing: Active Alerts',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.text,
+                                      ),
                                     ),
-                                  ),
+                                    GestureDetector(
+                                      onTap: () => widget.onNavigateToTab?.call(3),
+                                      child: Text(
+                                        'Alert centre →',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              // Show only top 3 most severe/recent alerts
+                              ..._alerts.take(3).map((alert) => AlertCard(alert: alert)),
+                            ],
                           ),
-                          const SizedBox(height: AppSpacing.xs),
-                          // Show only top 3 most severe/recent alerts
-                          ..._alerts.take(3).map((alert) => AlertCard(alert: alert)),
-
-                        ],
-                      ),
-                    ),
-                  if (_forecast != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SectionHeader(title: 'Today\'s Forecast'),
-                          ForecastCard(data: _forecast!),
-                        ],
-                      ),
-                    ),
-
-                ],
+                        ),
+                      if (_forecast != null)
+                        ForecastCard(data: _forecast!),
+                    ],
               ),
             ),
           ),

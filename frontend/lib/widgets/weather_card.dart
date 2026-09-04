@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../models/models.dart';
@@ -11,82 +10,98 @@ class WeatherCard extends StatelessWidget {
 
   IconData _getIcon(String iconName) {
     switch (iconName) {
-      case 'cloud-sun':
-        return LucideIcons.cloudSun;
-      case 'cloud-rain':
-        return LucideIcons.cloudRain;
-      case 'cloud-lightning':
-        return LucideIcons.cloudLightning;
-      case 'cloud':
-        return LucideIcons.cloud;
-      case 'sun':
-        return LucideIcons.sun;
-      default:
-        return LucideIcons.cloudSun;
+      case 'cloud-sun': return LucideIcons.cloudSun;
+      case 'cloud-rain': return LucideIcons.cloudRain;
+      case 'cloud-lightning': return LucideIcons.cloudLightning;
+      case 'cloud': return LucideIcons.cloud;
+      case 'sun': return LucideIcons.sun;
+      default: return LucideIcons.cloudSun;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          ),
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                data.location.city,
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(color: AppColors.surface),
-              ),
-              Text(
-                data.condition,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.surface.withValues(alpha: 0.9)),
-              ),
-              const SizedBox(height: AppSpacing.md),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${data.currentTemp}°C',
-                        style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.surface),
-                      ),
-                      Text(
-                        'Feels like ${data.feelsLike}°C',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.surface.withValues(alpha: 0.8)),
-                      ),
-                    ],
+                  const Icon(LucideIcons.mapPin, size: 16, color: AppColors.text),
+                  const SizedBox(width: 4),
+                  Text(
+                    data.location.city,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                   ),
-                  Icon(_getIcon(data.icon), size: 48, color: AppColors.surface),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
               Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.surface.withValues(alpha: 0.2))),
+                  color: AppColors.card.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.card.withValues(alpha: 0.3)),
                 ),
-                padding: const EdgeInsets.only(top: AppSpacing.sm),
-                child: Row(
+                child: const Text('Current observation', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Row(
+            children: [
+              Icon(_getIcon(data.icon), size: 48, color: AppColors.text),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('💧 ${data.humidity}%', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.surface)),
-                    const SizedBox(width: AppSpacing.lg),
-                    Text('💨 ${data.windSpeed} km/h', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.surface)),
+                    Text(
+                      data.condition,
+                      style: Theme.of(context).textTheme.displaySmall,
+                    ),
+                    Text(
+                      'Latest available conditions',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.text.withValues(alpha: 0.8)),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${data.currentTemp}°',
+                style: const TextStyle(fontSize: 84, fontWeight: FontWeight.bold, height: 1.0, letterSpacing: -2),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Feels like ${data.feelsLike}°C',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        'High humidity is adding to the warmth.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.text.withValues(alpha: 0.7)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

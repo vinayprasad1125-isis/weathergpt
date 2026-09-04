@@ -1,31 +1,39 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF0EA5E9);
-  static const Color primaryDark = Color(0xFF0284C7);
-  static const Color secondary = Color(0xFF38BDF8);
-  static const Color background = Color(0xFFF8FAFC);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color text = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color border = Color(0xFFE2E8F0);
-  static const Color error = Color(0xFFEF4444);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color success = Color(0xFF22C55E);
-  static const Color info = Color(0xFF3B82F6);
-  static const Color surface = Color(0xFFFFFFFF);
+  // Light Theme
+  static const Color primary = Color(0xFF0C717C);
+  static const Color primaryDark = Color(0xFF074F58);
+  static const Color secondary = Color(0xFFEFB241); // Sun color
+  static const Color background = Color(0xFFE0EDEE); // Canvas
+  static const Color card = Color(0xFFF7FBFB); // Surface
+  static const Color text = Color(0xFF08222B); // Ink
+  static const Color textSecondary = Color(0xFF24688F); // Minor alert or similar
+  static const Color border = Color(0xFF97690E); 
+  static const Color error = Color(0xFFB01E2D); // Extreme alert
+  static const Color warning = Color(0xFFCD4D1E); // Severe alert
+  static const Color success = Color(0xFF24688F); 
+  static const Color info = Color(0xFF24688F);
+  static const Color surface = Color(0xFFF7FBFB);
   
-  // Dark theme colors
-  static const Color darkBackground = Color(0xFF0F172A);
-  static const Color darkCard = Color(0xFF1E293B);
-  static const Color darkSurface = Color(0xFF1E293B);
-  static const Color darkText = Color(0xFFF8FAFC);
-  static const Color darkTextSecondary = Color(0xFF94A3B8);
+  // Dark Theme
+  static const Color darkBackground = Color(0xFF05141C);
+  static const Color darkCard = Color(0xFF0A1F28);
+  static const Color darkSurface = Color(0xFF0A1F28);
+  static const Color darkText = Color(0xFFE6F1F1);
+  static const Color darkTextSecondary = Color(0xFF6DB4D9);
   
-  static const Color alertExtreme = Color(0xFFDC2626);
-  static const Color alertSevere = Color(0xFFEA580C);
-  static const Color alertModerate = Color(0xFFD97706);
-  static const Color alertMinor = Color(0xFFCA8A04);
+  // Alerts Light
+  static const Color alertExtreme = Color(0xFFB01E2D);
+  static const Color alertSevere = Color(0xFFCD4D1E);
+  static const Color alertModerate = Color(0xFF97690E);
+  static const Color alertMinor = Color(0xFF24688F);
+
+  // Alerts Dark
+  static const Color darkAlertExtreme = Color(0xFFF76973);
+  static const Color darkAlertSevere = Color(0xFFF79158);
+  static const Color darkAlertModerate = Color(0xFFEBBC53);
+  static const Color darkAlertMinor = Color(0xFF6DB4D9);
 }
 
 class AppSpacing {

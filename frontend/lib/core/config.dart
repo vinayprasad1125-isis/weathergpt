@@ -1,7 +1,9 @@
 class Config {
-  // Use localhost via adb reverse tcp:8000 tcp:8000 on Android
+  // Use Mac's local WiFi IP so the Android app can connect over WiFi (no USB required).
+  // Run `ipconfig getifaddr en0` on Mac to get this IP.
+  // Both Mac and Android must be on the same WiFi network.
   static String get apiBaseUrl {
-    return 'http://localhost:8000';
+    return 'http://10.45.253.73:8000';
   }
 
   static const String _envOwmApiKey = String.fromEnvironment(

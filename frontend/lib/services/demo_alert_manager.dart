@@ -73,6 +73,12 @@ class DemoAlertManager {
 
   void _start() {
     if (_timer != null && _timer!.isActive) return;
+    if (demoAlerts.isEmpty) {
+      _generateAlert();
+      _generateAlert(); // Generate 2 immediate alerts so it's not empty
+    } else {
+      _generateAlert();
+    }
     _scheduleNextAlert();
   }
 
