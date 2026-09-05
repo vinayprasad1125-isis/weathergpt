@@ -23,7 +23,7 @@ services:
 
   ingestion-worker:
     build: .
-    command: ["python", "app/worker.py"]
+    command: ["python", "-m", "app.worker"]
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/weathergpt
       - REDIS_URL=redis://redis:6379/0
@@ -79,6 +79,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
     networks:
       - weathergpt-network
     restart: unless-stopped
@@ -87,6 +88,7 @@ services:
 
 volumes:
   postgres_data:
+  grafana_data:
 
 networks:
   weathergpt-network:

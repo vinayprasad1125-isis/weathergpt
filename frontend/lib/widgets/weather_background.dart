@@ -87,13 +87,13 @@ class _WeatherBackgroundState extends State<WeatherBackground>
           phase: _rng.nextDouble() * math.pi * 2,
         ));
       case WeatherAnimationState.cloudy:
-        return List.generate(6, (i) => _Particle(
+        return List.generate(10, (i) => _Particle(
           x: _rng.nextDouble(),
-          y: 0.05 + _rng.nextDouble() * 0.35,
-          size: 80.0 + _rng.nextDouble() * 120,
-          speed: 0.008 + _rng.nextDouble() * 0.012,
+          y: 0.05 + _rng.nextDouble() * 0.45, // Spread a bit lower too
+          size: 70.0 + _rng.nextDouble() * 100,
+          speed: 0.015 + _rng.nextDouble() * 0.025, // Increased speed to make animation more apparent
           drift: 0,
-          opacity: 0.12 + _rng.nextDouble() * 0.15,
+          opacity: 0.15 + _rng.nextDouble() * 0.3,
           phase: _rng.nextDouble() * math.pi * 2,
         ));
       default:
@@ -117,15 +117,16 @@ class _WeatherBackgroundState extends State<WeatherBackground>
       opacity: _fadeCtrl,
       child: AnimatedBuilder(
         animation: _particleCtrl,
-        builder: (context, _) {
-          final t = reduceMotion ? 0.0 : _particleCtrl.value;
+        builder: (context, child) {
           return CustomPaint(
             painter: _WeatherPainter(
-              state: _currentState,
-              t: t,
-              particles: _particles,
+              _currentState,
+              reduceMotion ? 0.0 : _particleCtrl.value,
+              _particles,
+              Theme.of(context).colorScheme,
+              reduceMotion ? 0.0 : DateTime.now().millisecondsSinceEpoch / 1000.0,
             ),
-            child: const SizedBox.expand(),
+            child: Container(),
           );
         },
       ),
@@ -155,10 +156,12 @@ class _Particle {
 // ─────────────────────────────────────────────────────────────────────────────
 class _WeatherPainter extends CustomPainter {
   final WeatherAnimationState state;
-  final double t; // animation controller value [0,1]
+  final double t; // 0.0 to 1.0 (animation progress)
   final List<_Particle> particles;
+  final ColorScheme colorScheme;
+  final double time; // Continuous time in seconds for non-snapping linear movement
 
-  _WeatherPainter({required this.state, required this.t, required this.particles});
+  _WeatherPainter(this.state, this.t, this.particles, this.colorScheme, this.time);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -181,21 +184,12 @@ class _WeatherPainter extends CustomPainter {
 
   // ── SNOW ──────────────────────────────────────────────────────────────────
   void _paintSnow(Canvas canvas, Size size) {
-    // subtle cold-blue gradient sky
-    final bgPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [const Color(0xFFB8D4F0), const Color(0xFFECF4FB)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
     final flakePaint = Paint()..style = PaintingStyle.fill;
     for (final p in particles) {
-      // compute current position
-      final dy = (p.y + p.speed * t * 10) % 1.0;
-      final dx = (p.x + p.drift * math.sin(p.phase + t * math.pi * 4)) % 1.0;
-      flakePaint.color = Colors.white.withOpacity(p.opacity);
+      // compute continuous position to avoid snapping when t resets
+      final dy = (p.y + p.speed * time * 1.5) % 1.0;
+      final dx = (p.x + p.drift * math.sin(p.phase + time)) % 1.0;
+      flakePaint.color = colorScheme.onSurface.withOpacity(p.opacity * 0.7);
       canvas.drawCircle(
         Offset(dx * size.width, dy * size.height),
         p.size / 2,
@@ -204,43 +198,49 @@ class _WeatherPainter extends CustomPainter {
     }
   }
 
-  // ── CLOUDY ────────────────────────────────────────────────────────────────
   void _paintCloudy(Canvas canvas, Size size) {
-    final bgPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [const Color(0xFFCFD9E8), const Color(0xFFECF0F5)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
+    final isLight = colorScheme.brightness == Brightness.light;
+    
     final cloudPaint = Paint()
       ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18); 
+
+    final shadowPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24);
 
     for (final p in particles) {
-      final dx = ((p.x + p.speed * t * 4) % 1.2) - 0.1;
-      cloudPaint.color = Colors.white.withOpacity(p.opacity);
+      // Use continuous time so clouds move endlessly without snapping back
+      final dx = ((p.x + p.speed * time) % 1.4) - 0.2; 
+      
+      final adjustedOpacity = isLight ? math.min(1.0, p.opacity * 2.8) : p.opacity * 0.7;
+      
       final cx = dx * size.width;
       final cy = p.y * size.height;
       final r = p.size;
-      // draw a simple cloud blob as multiple overlapping circles
-      canvas.drawOval(Rect.fromCenter(center: Offset(cx, cy), width: r * 2, height: r * 1.1), cloudPaint);
-      canvas.drawOval(Rect.fromCenter(center: Offset(cx - r * 0.5, cy + r * 0.15), width: r * 1.4, height: r * 0.9), cloudPaint);
-      canvas.drawOval(Rect.fromCenter(center: Offset(cx + r * 0.55, cy + r * 0.15), width: r * 1.3, height: r * 0.85), cloudPaint);
+      
+      // Draw shadow first to give 3D volume and contrast against light backgrounds
+      shadowPaint.color = isLight 
+          ? Colors.blueGrey.withValues(alpha: adjustedOpacity * 0.3)
+          : Colors.black.withValues(alpha: adjustedOpacity * 0.5);
+      
+      final shadowOffset = r * 0.2;
+      canvas.drawOval(Rect.fromCenter(center: Offset(cx, cy + shadowOffset), width: r * 2.2, height: r * 0.8), shadowPaint);
+      canvas.drawCircle(Offset(cx - r * 0.5, cy - r * 0.1 + shadowOffset), r * 0.55, shadowPaint);
+      canvas.drawCircle(Offset(cx + r * 0.1, cy - r * 0.3 + shadowOffset), r * 0.85, shadowPaint);
+      canvas.drawCircle(Offset(cx + r * 0.65, cy - r * 0.05 + shadowOffset), r * 0.45, shadowPaint);
+      
+      // Draw white cloud body
+      cloudPaint.color = Colors.white.withValues(alpha: adjustedOpacity);
+      canvas.drawOval(Rect.fromCenter(center: Offset(cx, cy), width: r * 2.2, height: r * 0.8), cloudPaint);
+      canvas.drawCircle(Offset(cx - r * 0.5, cy - r * 0.1), r * 0.55, cloudPaint);
+      canvas.drawCircle(Offset(cx + r * 0.1, cy - r * 0.3), r * 0.85, cloudPaint);
+      canvas.drawCircle(Offset(cx + r * 0.65, cy - r * 0.05), r * 0.45, cloudPaint);
     }
   }
 
   // ── MILD SUNNY ────────────────────────────────────────────────────────────
   void _paintMildSunny(Canvas canvas, Size size) {
-    final bgPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [const Color(0xFF87CEEB), const Color(0xFFFFF9E6)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
     final pulse = 0.92 + 0.08 * math.sin(t * math.pi * 2);
     final cx = size.width * 0.82;
     final cy = size.height * 0.12;
@@ -248,32 +248,22 @@ class _WeatherPainter extends CustomPainter {
     // outer soft glow
     final glowPaint = Paint()
       ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 55);
-    glowPaint.color = const Color(0xFFFFF176).withOpacity(0.35 * pulse);
-    canvas.drawCircle(Offset(cx, cy), 120 * pulse, glowPaint);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
+    glowPaint.color = colorScheme.secondary.withOpacity(0.35 * pulse);
+    canvas.drawCircle(Offset(cx, cy), size.width * 0.35, glowPaint);
 
-    // mid glow
-    glowPaint.color = const Color(0xFFFFEB3B).withOpacity(0.5 * pulse);
-    glowPaint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 22);
-    canvas.drawCircle(Offset(cx, cy), 60 * pulse, glowPaint);
+    glowPaint.color = colorScheme.secondary.withOpacity(0.5 * pulse);
+    canvas.drawCircle(Offset(cx, cy), size.width * 0.2, glowPaint);
 
-    // sun disc
+    // solid sun core
     final sunPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = const Color(0xFFFFD600).withOpacity(0.85);
-    canvas.drawCircle(Offset(cx, cy), 32 * pulse, sunPaint);
+      ..color = colorScheme.secondary.withOpacity(0.85);
+    canvas.drawCircle(Offset(cx, cy), size.width * 0.08, sunPaint);
   }
 
   // ── EXTREME SUNNY ────────────────────────────────────────────────────────
   void _paintExtremeSunny(Canvas canvas, Size size) {
-    final bgPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [const Color(0xFFFFA726), const Color(0xFFFFF8E1)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
     final pulse = 0.88 + 0.12 * math.sin(t * math.pi * 2);
     final cx = size.width * 0.82;
     final cy = size.height * 0.1;
@@ -285,7 +275,7 @@ class _WeatherPainter extends CustomPainter {
     for (int i = 0; i < 5; i++) {
       final bandY = size.height * (0.55 + i * 0.1) +
           6 * math.sin(t * math.pi * 4 + i * 0.9);
-      shimmerPaint.color = const Color(0xFFFFA726).withOpacity(0.07);
+      shimmerPaint.color = colorScheme.secondary.withOpacity(0.07);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(0, bandY, size.width, 18),
@@ -305,7 +295,7 @@ class _WeatherPainter extends CustomPainter {
       final angle = (i / rayCount) * math.pi * 2 + t * math.pi * 0.5;
       final r1 = 50.0 * pulse;
       final r2 = 90.0 + 20 * math.sin(t * math.pi * 3 + i) * pulse;
-      rayPaint.color = const Color(0xFFFFD600).withOpacity(0.22);
+      rayPaint.color = colorScheme.secondary.withOpacity(0.22);
       canvas.drawLine(
         Offset(cx + math.cos(angle) * r1, cy + math.sin(angle) * r1),
         Offset(cx + math.cos(angle) * r2, cy + math.sin(angle) * r2),
@@ -317,17 +307,17 @@ class _WeatherPainter extends CustomPainter {
     final glowPaint = Paint()
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 65);
-    glowPaint.color = const Color(0xFFFF6F00).withOpacity(0.38 * pulse);
+    glowPaint.color = colorScheme.error.withOpacity(0.38 * pulse);
     canvas.drawCircle(Offset(cx, cy), 140 * pulse, glowPaint);
 
-    glowPaint.color = const Color(0xFFFFD600).withOpacity(0.55 * pulse);
+    glowPaint.color = colorScheme.secondary.withOpacity(0.55 * pulse);
     glowPaint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
     canvas.drawCircle(Offset(cx, cy), 70 * pulse, glowPaint);
 
     // sun disc
     final sunPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = const Color(0xFFFFE57F);
+      ..color = colorScheme.secondary;
     canvas.drawCircle(Offset(cx, cy), 40 * pulse, sunPaint);
   }
 

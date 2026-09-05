@@ -46,7 +46,7 @@ class ApiWeatherService {
           sunrise: sun['sunrise'],
           sunset: sun['sunset'],
           cloudCoverage: (current['cloud_cover'] as num).round(),
-          precipitationProb: (current['precipitation'] as num) > 0 ? 100 : 0, // Mocked prob since standard api gives precip in mm
+          precipitationProb: (current['precipitation_probability'] as num?)?.round() ?? 0,
           icon: _mapConditionToIcon(current['condition']),
         );
       } else {

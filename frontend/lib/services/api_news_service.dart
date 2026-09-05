@@ -108,13 +108,10 @@ class ApiNewsService {
     final descLower = (article.description ?? '').toLowerCase();
     final combined = '$titleLower $descLower';
 
-    // Must mention the state
-    if (combined.contains(stateLower)) return true;
-
-    // Or mention a strong weather keyword alongside India
-    final hasWeatherKeyword = _weatherKeywords.any((k) => combined.contains(k.toLowerCase()));
-    final mentionsIndia = combined.contains('india') || combined.contains('imd');
-    return hasWeatherKeyword && mentionsIndia;
+    // Must mention the state explicitly to avoid showing irrelevant national news.
+    // Previously, it allowed any article mentioning "India" and a weather keyword,
+    // which caused news about other states to bleed in.
+    return combined.contains(stateLower);
   }
 
   /// Returns demo articles for when Demo Mode is on.

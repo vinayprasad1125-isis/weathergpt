@@ -53,7 +53,7 @@ class AlertCard extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(LucideIcons.x, color: AppColors.textSecondary),
+                      icon: Icon(LucideIcons.x, color: AppColors.textSecondary),
                       onPressed: () => Navigator.pop(context),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -98,7 +98,7 @@ class AlertCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _DetailRow(icon: LucideIcons.info, label: 'Status', value: alert.status, context: context),
                 const SizedBox(height: AppSpacing.md),
-                const Divider(color: AppColors.border),
+                Divider(color: AppColors.border),
                 const SizedBox(height: AppSpacing.md),
                 Text('Description', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: AppSpacing.xs),
@@ -190,7 +190,7 @@ class AlertCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             Container(
-              decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.border))),
+              decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.border))),
               padding: const EdgeInsets.only(top: AppSpacing.sm),
               child: Text(
                 'View details →',

@@ -131,7 +131,7 @@ class _HourlyRibbonState extends State<HourlyRibbon> {
                           ],
                         ),
                       ),
-                      Text('${activeHour.temp}°', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      Text('${activeHour.temp}°', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary)),
                     ],
                   ),
                 ),

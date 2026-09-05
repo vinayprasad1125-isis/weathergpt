@@ -31,7 +31,7 @@ class WeatherCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.mapPin, size: 16, color: AppColors.text),
+                  Icon(LucideIcons.mapPin, size: 16, color: AppColors.text),
                   const SizedBox(width: 4),
                   Text(
                     data.location.city,

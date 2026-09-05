@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../core/config.dart';
 import '../main.dart'; // To access MainNavigator
+import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -83,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
+        SnackBar(content: Text(message), backgroundColor: AppColors.error),
       );
     }
   }
@@ -112,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'Please sign in to continue.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey,
+                  color: AppColors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),

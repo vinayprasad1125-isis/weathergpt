@@ -33,7 +33,7 @@ class ApiAdvisoryService {
             category: domain,
             location: data['location']?['name'] ?? 'Selected Location',
             title: data['summary'] ?? 'Advisory',
-            details: (data['recommendations'] as List<dynamic>?)?.join('\\n') ?? '',
+            details: (data['recommendations'] as List<dynamic>?)?.join('\n\n') ?? 'No specific recommendations at this time.',
             rainProbability: 0,
             tempRange: 'N/A'
           )

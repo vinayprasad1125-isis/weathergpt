@@ -459,7 +459,7 @@ class _NewsCard extends StatelessWidget {
                 // Source & time row
                 Row(
                   children: [
-                    const Icon(LucideIcons.newspaper, size: 14, color: AppColors.textSecondary),
+                    Icon(LucideIcons.newspaper, size: 14, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -473,7 +473,7 @@ class _NewsCard extends StatelessWidget {
                     ),
                     if (article.publishedAt != null) ...[
                       const SizedBox(width: 8),
-                      const Icon(LucideIcons.clock, size: 13, color: AppColors.textSecondary),
+                      Icon(LucideIcons.clock, size: 13, color: AppColors.textSecondary),
                       const SizedBox(width: 3),
                       Text(
                         _timeAgo(article.publishedAt),
@@ -499,7 +499,7 @@ class _NewsCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: AppColors.primary, width: 1),
+                          side: BorderSide(color: AppColors.primary, width: 1),
                         ),
                       ),
                     ),

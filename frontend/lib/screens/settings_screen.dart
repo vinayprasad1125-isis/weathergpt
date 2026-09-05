@@ -82,22 +82,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionHeader('About'),
           _buildSettingsCard(context, [
             ListTile(
-              leading: const Icon(LucideIcons.info, color: AppColors.primary),
+              leading: Icon(LucideIcons.info, color: AppColors.primary),
               title: const Text('App Version', style: TextStyle(fontWeight: FontWeight.w500)),
-              trailing: const Text('1.0.0', style: TextStyle(color: Colors.grey)),
+              trailing: Text('1.0.0', style: TextStyle(color: AppColors.textMuted)),
             ),
             const Divider(height: 1),
             ListTile(
-              leading: const Icon(LucideIcons.shield, color: AppColors.primary),
+              leading: Icon(LucideIcons.shield, color: AppColors.primary),
               title: const Text('Privacy Policy', style: TextStyle(fontWeight: FontWeight.w500)),
-              trailing: const Icon(LucideIcons.chevronRight, color: Colors.grey, size: 20),
+              trailing: Icon(LucideIcons.chevronRight, color: AppColors.textMuted, size: 20),
               onTap: () {},
             ),
             const Divider(height: 1),
             ListTile(
-              leading: const Icon(LucideIcons.fileText, color: AppColors.primary),
+              leading: Icon(LucideIcons.fileText, color: AppColors.primary),
               title: const Text('Terms of Service', style: TextStyle(fontWeight: FontWeight.w500)),
-              trailing: const Icon(LucideIcons.chevronRight, color: Colors.grey, size: 20),
+              trailing: Icon(LucideIcons.chevronRight, color: AppColors.textMuted, size: 20),
               onTap: () {},
             ),
           ]),
@@ -112,10 +112,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
-          color: Colors.black54,
+          color: AppColors.textSecondary,
           letterSpacing: 1.2,
         ),
       ),

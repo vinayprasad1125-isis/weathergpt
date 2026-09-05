@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import '../theme/app_theme.dart';
+import '../main.dart';
 
 class ForecastScreen extends StatefulWidget {
   const ForecastScreen({super.key});
@@ -38,12 +40,31 @@ class _ForecastScreenState extends State<ForecastScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('7-Day Forecast', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const MainNavigator()),
+              );
+            }
+          },
+        ),
+        title: Text(
+          '7-Day Forecast',
+          style: theme.textTheme.displaySmall?.copyWith(
+            color: theme.appBarTheme.foregroundColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
         centerTitle: true,
       ),
       body: FutureBuilder<ForecastData>(
@@ -53,10 +74,17 @@ class _ForecastScreenState extends State<ForecastScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: theme.textTheme.bodyLarge?.copyWith(color: AppColors.error),
+              ),
+            );
           }
           if (!snapshot.hasData) {
-            return const Center(child: Text('No forecast available.'));
+            return Center(
+              child: Text('No forecast available.', style: theme.textTheme.bodyLarge),
+            );
           }
 
           final data = snapshot.data!;
@@ -69,11 +97,14 @@ class _ForecastScreenState extends State<ForecastScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildHourlySection(data.hourly),
+                _buildHourlySection(context, data.hourly),
                 const SizedBox(height: 24),
-                const Text('Daily Forecast', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(
+                  'Daily Forecast',
+                  style: theme.textTheme.displaySmall,
+                ),
                 const SizedBox(height: 12),
-                _buildDailySection(data.daily),
+                _buildDailySection(context, data.daily),
               ],
             ),
           );
@@ -82,14 +113,19 @@ class _ForecastScreenState extends State<ForecastScreen> {
     );
   }
 
-  Widget _buildHourlySection(List<HourlyForecast> hourly) {
+  Widget _buildHourlySection(BuildContext context, List<HourlyForecast> hourly) {
+    final theme = Theme.of(context);
     return Container(
       height: 150,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -98,7 +134,6 @@ class _ForecastScreenState extends State<ForecastScreen> {
         itemCount: hourly.length,
         itemBuilder: (context, index) {
           final item = hourly[index];
-          // Time parsing assumes format like "2023-10-25T14:00"
           String displayTime = item.time;
           if (displayTime.contains('T')) {
             displayTime = displayTime.split('T')[1];
@@ -108,13 +143,28 @@ class _ForecastScreenState extends State<ForecastScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(displayTime, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black54)),
+                Text(
+                  displayTime,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                Icon(_getIconData(item.icon), color: Colors.blue, size: 28),
+                Icon(_getIconData(item.icon), color: AppColors.primary, size: 28),
                 const SizedBox(height: 12),
-                Text('${item.temp}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                if (item.precipitationProb > 0)
-                  Text('${item.precipitationProb}%', style: const TextStyle(color: Colors.blue, fontSize: 12)),
+                Text(
+                  '${item.temp}°',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${item.precipitationProb}%',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
               ],
             ),
           );
@@ -123,20 +173,28 @@ class _ForecastScreenState extends State<ForecastScreen> {
     );
   }
 
-  Widget _buildDailySection(List<DailyForecast> daily) {
+  Widget _buildDailySection(BuildContext context, List<DailyForecast> daily) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: daily.length,
-        separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.black12),
+        separatorBuilder: (context, index) => Divider(
+          height: 1,
+          color: AppColors.divider,
+        ),
         itemBuilder: (context, index) {
           final item = daily[index];
           return Padding(
@@ -146,18 +204,27 @@ class _ForecastScreenState extends State<ForecastScreen> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: Text(item.day, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(
+                    item.day,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 Expanded(
                   flex: 1,
                   child: Row(
                     children: [
-                      Icon(_getIconData(item.icon), color: Colors.blue, size: 24),
-                      if (item.precipitationProb > 0)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: Text('${item.precipitationProb}%', style: const TextStyle(color: Colors.blue, fontSize: 12)),
+                      Icon(_getIconData(item.icon), color: AppColors.primary, size: 24),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          '${item.precipitationProb}%',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.primary,
+                          ),
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -166,9 +233,19 @@ class _ForecastScreenState extends State<ForecastScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text('${item.minTemp}°', style: const TextStyle(color: Colors.black54, fontSize: 16)),
+                      Text(
+                        '${item.minTemp}°',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Text('${item.maxTemp}°', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        '${item.maxTemp}°',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),

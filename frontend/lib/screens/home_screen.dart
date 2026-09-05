@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(LucideIcons.alertTriangle, size: 48, color: AppColors.error),
+                        Icon(LucideIcons.alertTriangle, size: 48, color: AppColors.error),
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           _errorMessage!,

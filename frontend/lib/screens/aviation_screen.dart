@@ -68,7 +68,7 @@ class _AviationScreenState extends State<AviationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(LucideIcons.planeTakeoff, color: AppColors.primary),
                 SizedBox(width: 8),
@@ -79,7 +79,7 @@ class _AviationScreenState extends State<AviationScreen> {
             const SizedBox(height: 8),
             _infoRow("Raw Text:", metar['rawOb'] ?? 'N/A'),
             const SizedBox(height: 12),
-            _infoRow("Time:", metar['obsTime'] ?? 'N/A'),
+            _infoRow("Time:", metar['obsTime']?.toString() ?? 'N/A'),
             _infoRow("Temp / Dewpoint:", "${metar['temp']}°C / ${metar['dewp']}°C"),
             _infoRow("Wind:", "${metar['wdir']}° at ${metar['wspd']} kts"),
             _infoRow("Visibility:", "${metar['visib']} sm"),
@@ -107,7 +107,7 @@ class _AviationScreenState extends State<AviationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(LucideIcons.calendarClock, color: AppColors.primary),
                 SizedBox(width: 8),
@@ -134,7 +134,7 @@ class _AviationScreenState extends State<AviationScreen> {
         children: [
           SizedBox(
             width: 120,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            child: Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
           ),
           Expanded(
             child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -186,7 +186,7 @@ class _AviationScreenState extends State<AviationScreen> {
               child: _isLoading 
                 ? const Center(child: CircularProgressIndicator())
                 : _error.isNotEmpty
-                  ? Center(child: Text(_error, style: const TextStyle(color: Colors.red)))
+                  ? Center(child: Text(_error, style: TextStyle(color: AppColors.error)))
                   : ListView(
                       children: [
                         _buildMetarCard(),

@@ -66,7 +66,7 @@ class ForecastCard extends StatelessWidget {
                         height: 4,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2),
-                          gradient: const LinearGradient(
+                          gradient: LinearGradient(
                             colors: [AppColors.info, AppColors.secondary],
                           ),
                         ),

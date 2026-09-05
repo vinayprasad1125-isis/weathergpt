@@ -69,10 +69,11 @@ class WeatherService:
                 humidity=current["relative_humidity_2m"],
                 wind_speed=current["wind_speed_10m"],
                 wind_direction=map_wind_direction(current["wind_direction_10m"]),
-                visibility=10.0, # Not provided cleanly by standard current API, mock with 10
+                visibility=round(current.get("visibility", 10000.0) / 1000.0, 1),
                 pressure=int(current["surface_pressure"]),
                 uv_index=float(uv_index) if uv_index else 0.0,
                 precipitation=current["precipitation"],
+                precipitation_probability=current.get("precipitation_probability", 0),
                 cloud_cover=current["cloud_cover"]
             ),
             sun=SunInformation(

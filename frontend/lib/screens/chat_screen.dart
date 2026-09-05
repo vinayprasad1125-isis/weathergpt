@@ -232,7 +232,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     children: [
                       const SizedBox(
                         width: 16, height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                       const SizedBox(width: 10),
                       Text('WeatherGPT is thinking...', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
@@ -256,7 +256,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       label: Text(_suggestedQuestions[index]),
                       onPressed: () => _sendMessage(_suggestedQuestions[index]),
                       backgroundColor: AppColors.card,
-                      side: const BorderSide(color: AppColors.primary),
+                      side: BorderSide(color: AppColors.primary),
                       labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primaryDark),
                     ),
                   );
@@ -265,7 +265,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           Container(
             padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.border)),
             ),
@@ -300,7 +300,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(LucideIcons.square, color: AppColors.surface, size: 16),
+                      icon: Icon(LucideIcons.square, color: AppColors.surface, size: 16),
                       onPressed: () async {
                         await _ttsService.stop();
                         if (mounted) setState(() => _isDictating = false);
@@ -309,12 +309,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   )
                 else
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(LucideIcons.send, color: AppColors.surface, size: 20),
+                      icon: Icon(LucideIcons.send, color: AppColors.surface, size: 20),
                       onPressed: () => _sendMessage(_textController.text),
                     ),
                   ),

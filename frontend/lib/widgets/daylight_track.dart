@@ -64,7 +64,7 @@ class DaylightTrack extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.sunrise, size: 20, color: AppColors.secondary),
+                  Icon(LucideIcons.sunrise, size: 20, color: AppColors.secondary),
                   const SizedBox(width: AppSpacing.sm),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,7 +85,7 @@ class DaylightTrack extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  const Icon(LucideIcons.sunset, size: 20, color: AppColors.primary),
+                  Icon(LucideIcons.sunset, size: 20, color: AppColors.primary),
                 ],
               ),
             ],

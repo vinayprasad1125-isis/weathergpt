@@ -87,7 +87,7 @@ class _AdvisoriesScreenState extends State<AdvisoriesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(LucideIcons.alertCircle, size: 48, color: AppColors.error),
+                      Icon(LucideIcons.alertCircle, size: 48, color: AppColors.error),
                       const SizedBox(height: AppSpacing.md),
                       Text(_errorMessage!, style: Theme.of(context).textTheme.titleMedium),
                     ],
@@ -98,16 +98,24 @@ class _AdvisoriesScreenState extends State<AdvisoriesScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(LucideIcons.checkCircle, size: 64, color: Colors.green.withOpacity(0.5)),
+                          Icon(
+                            LucideIcons.checkCircle,
+                            size: 64,
+                            color: AppColors.success.withOpacity(0.5),
+                          ),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'No Active Advisories',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             'There are no advisories for your area at this time.',
-                            style: TextStyle(color: Colors.black54),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -166,13 +174,13 @@ class _AdvisoriesScreenState extends State<AdvisoriesScreen> {
                                 const SizedBox(height: AppSpacing.md),
                                 Row(
                                   children: [
-                                    const Icon(LucideIcons.thermometer, size: 16, color: AppColors.textSecondary),
+                                    Icon(LucideIcons.thermometer, size: 16, color: AppColors.textSecondary),
                                     const SizedBox(width: 4),
-                                    Text(advisory.tempRange, style: const TextStyle(color: AppColors.textSecondary)),
+                                    Text(advisory.tempRange, style: TextStyle(color: AppColors.textSecondary)),
                                     const SizedBox(width: AppSpacing.md),
-                                    const Icon(LucideIcons.cloudRain, size: 16, color: AppColors.textSecondary),
+                                    Icon(LucideIcons.cloudRain, size: 16, color: AppColors.textSecondary),
                                     const SizedBox(width: 4),
-                                    Text('${advisory.rainProbability}% Rain', style: const TextStyle(color: AppColors.textSecondary)),
+                                    Text('${advisory.rainProbability}% Rain', style: TextStyle(color: AppColors.textSecondary)),
                                   ],
                                 ),
                               ],

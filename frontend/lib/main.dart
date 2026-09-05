@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'theme/app_theme.dart';
+import 'core/theme_controller.dart';
 import 'screens/home_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/alerts_screen.dart';
@@ -43,12 +44,45 @@ class WeatherGPTApp extends StatefulWidget {
   State<WeatherGPTApp> createState() => _WeatherGPTAppState();
 }
 
-class _WeatherGPTAppState extends State<WeatherGPTApp> {
+class _WeatherGPTAppState extends State<WeatherGPTApp> with WidgetsBindingObserver {
   Locale _locale = const Locale('en');
-  ThemeMode _themeMode = ThemeMode.light;
+  late final ThemeController _themeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeController = ThemeController();
+    _themeController.addListener(_onThemeChanged);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _themeController.removeListener(_onThemeChanged);
+    _themeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _themeController.checkAndScheduleThemeUpdate();
+    }
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+  }
 
   void setLocale(Locale locale) => setState(() => _locale = locale);
-  void setThemeMode(ThemeMode mode) => setState(() => _themeMode = mode);
+  
+  // Keep setThemeMode for backwards compatibility with Settings screen manual toggle,
+  // but it delegates to ThemeController to handle overrides if needed, 
+  // or we just let it update the UI temporarily.
+  void setThemeMode(ThemeMode mode) {
+    _themeController.setManualThemeMode(mode);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,14 +90,14 @@ class _WeatherGPTAppState extends State<WeatherGPTApp> {
       locale: _locale,
       setLocale: setLocale,
       child: ThemeProvider(
-        themeMode: _themeMode,
+        themeMode: _themeController.currentThemeMode,
         setThemeMode: setThemeMode,
         child: MaterialApp(
           title: 'WeatherGPT',
           scaffoldMessengerKey: rootScaffoldMessengerKey,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: _themeMode,
+          themeMode: _themeController.currentThemeMode,
           debugShowCheckedModeBanner: false,
           locale: _locale,
           supportedLocales: const [Locale('en'), Locale('hi'), Locale('ta')],
@@ -120,7 +154,7 @@ class _MainNavigatorState extends State<MainNavigator> {
         children: _screens,
       ),
       drawer: Drawer(
-        backgroundColor: isDark ? const Color(0xFF1E1E2E) : AppColors.surface,
+        backgroundColor: isDark ? AppColors.nightSurface : AppColors.dayBackground,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(24),

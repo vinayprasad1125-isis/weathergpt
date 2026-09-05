@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import '../widgets/headers.dart';
 import '../theme/app_theme.dart';
@@ -17,7 +18,7 @@ class _ClimateScreenState extends State<ClimateScreen> {
   List<dynamic> _fullData = [];
   List<dynamic> _displayData = [];
   bool _isLoading = true;
-  bool _showLast50Years = true;
+  int _selectedYears = 50;
   String _trendDirection = '';
   double _trendSlope = 0.0;
 
@@ -43,9 +44,12 @@ class _ClimateScreenState extends State<ClimateScreen> {
   }
 
   void _updateDisplayData() {
-    if (_showLast50Years) {
-      // Last 50 years: 1975 to 2025
-      _displayData = _fullData.where((item) => item['year'] >= 1975).toList();
+    if (_fullData.isEmpty) return;
+
+    if (_selectedYears > 0) {
+      int maxYear = _fullData.map((e) => e['year'] as int).reduce(math.max);
+      int startYear = maxYear - _selectedYears;
+      _displayData = _fullData.where((item) => (item['year'] as int) > startYear).toList();
     } else {
       _displayData = List.from(_fullData);
     }
@@ -105,16 +109,21 @@ class _ClimateScreenState extends State<ClimateScreen> {
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
-                          DropdownButton<bool>(
-                            value: _showLast50Years,
+                          DropdownButton<int>(
+                            value: _selectedYears,
                             items: const [
-                              DropdownMenuItem(value: true, child: Text("Last 50 Years")),
-                              DropdownMenuItem(value: false, child: Text("Full Dataset")),
+                              DropdownMenuItem(value: 5, child: Text("Last 5 Years")),
+                              DropdownMenuItem(value: 10, child: Text("Last 10 Years")),
+                              DropdownMenuItem(value: 20, child: Text("Last 20 Years")),
+                              DropdownMenuItem(value: 30, child: Text("Last 30 Years")),
+                              DropdownMenuItem(value: 40, child: Text("Last 40 Years")),
+                              DropdownMenuItem(value: 50, child: Text("Last 50 Years")),
+                              DropdownMenuItem(value: 0, child: Text("Full Dataset")),
                             ],
                             onChanged: (value) {
                               if (value != null) {
                                 setState(() {
-                                  _showLast50Years = value;
+                                  _selectedYears = value;
                                   _updateDisplayData();
                                 });
                               }
@@ -132,39 +141,96 @@ class _ClimateScreenState extends State<ClimateScreen> {
                       ),
                       const SizedBox(height: 30),
                       Expanded(
-                        child: LineChart(
-                          LineChartData(
-                            gridData: const FlGridData(show: true),
-                            titlesData: FlTitlesData(
-                              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 30,
-                                  getTitlesWidget: (value, meta) {
-                                    if (value % 10 == 0) {
-                                      return Text(value.toInt().toString());
-                                    }
-                                    return const Text('');
-                                  },
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            double maxY = 0;
+                            double minY = double.infinity;
+                            Set<int> localMaxima = {};
+                            Set<int> localMinima = {};
+                            
+                            if (_displayData.isNotEmpty) {
+                              maxY = _displayData.map((e) => (e['annual_temp'] as num).toDouble()).reduce(math.max);
+                              minY = _displayData.map((e) => (e['annual_temp'] as num).toDouble()).reduce(math.min);
+                              
+                              for (int i = 0; i < _displayData.length; i++) {
+                                double current = _displayData[i]['annual_temp'].toDouble();
+                                bool isMax = true;
+                                bool isMin = true;
+                                
+                                if (i > 0) {
+                                  double prev = _displayData[i-1]['annual_temp'].toDouble();
+                                  if (current <= prev) isMax = false;
+                                  if (current >= prev) isMin = false;
+                                }
+                                if (i < _displayData.length - 1) {
+                                  double next = _displayData[i+1]['annual_temp'].toDouble();
+                                  if (current <= next) isMax = false;
+                                  if (current >= next) isMin = false;
+                                }
+                                
+                                if (isMax) localMaxima.add(i);
+                                if (isMin) localMinima.add(i);
+                              }
+                            }
+
+                            return LineChart(
+                              LineChartData(
+                                minY: _displayData.isNotEmpty ? (minY - 0.2).floorToDouble() : null,
+                                maxY: _displayData.isNotEmpty ? (maxY + 0.2).ceilToDouble() : null,
+                                gridData: const FlGridData(show: true),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                    axisNameWidget: const Text("Temperature (°C)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    axisNameSize: 24.0,
+                                    sideTitles: const SideTitles(showTitles: true, reservedSize: 45.0),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    axisNameWidget: const Text("Year", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    axisNameSize: 24.0,
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 30.0,
+                                      interval: _selectedYears > 0 && _selectedYears <= 20 ? 2.0 : 10.0,
+                                      getTitlesWidget: (value, meta) {
+                                        if (value % (_selectedYears > 0 && _selectedYears <= 20 ? 2 : 10) == 0) {
+                                          return Text(value.toInt().toString(), style: const TextStyle(fontSize: 12));
+                                        }
+                                        return const Text('');
+                                      },
+                                    ),
+                                  ),
+                                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                                 ),
+                                borderData: FlBorderData(show: true),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: _displayData.map((e) {
+                                      return FlSpot((e['year'] as num).toDouble(), (e['annual_temp'] as num).toDouble());
+                                    }).toList(),
+                                    isCurved: true,
+                                    color: AppColors.primary,
+                                    barWidth: 3.0,
+                                    dotData: FlDotData(
+                                      show: true,
+                                      checkToShowDot: (spot, barData) {
+                                        int index = barData.spots.indexOf(spot);
+                                        return localMaxima.contains(index) || localMinima.contains(index);
+                                      },
+                                      getDotPainter: (spot, percent, barData, index) {
+                                        return FlDotCirclePainter(
+                                          radius: 3.5,
+                                          color: Colors.orange,
+                                          strokeWidth: 2.0,
+                                          strokeColor: Colors.white,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            ),
-                            borderData: FlBorderData(show: true),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: _displayData.map((e) {
-                                  return FlSpot((e['year'] as num).toDouble(), (e['annual_temp'] as num).toDouble());
-                                }).toList(),
-                                isCurved: true,
-                                color: AppColors.primary,
-                                barWidth: 3,
-                                dotData: const FlDotData(show: false),
-                              ),
-                            ],
-                          ),
+                            );
+                          }
                         ),
                       ),
                     ],

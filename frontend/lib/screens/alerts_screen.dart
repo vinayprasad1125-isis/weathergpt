@@ -70,16 +70,24 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_outline, size: 64, color: Colors.green.withOpacity(0.5)),
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 64,
+                        color: AppColors.success.withOpacity(0.6),
+                      ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'No Active Alerts',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'There are no extreme weather warnings in your area.',
-                        style: TextStyle(color: Colors.black54),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),

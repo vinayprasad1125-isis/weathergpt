@@ -1,13 +1,18 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class Config {
-  // Use Mac's local WiFi IP so the Android app can connect over WiFi (no USB required).
-  // Both Mac and Android must be on the same WiFi network.
+  // Override at build time:
+  //   flutter run --dart-define=API_BASE_URL=https://xxxx.ngrok-free.app
+  // If not set, defaults to localhost (web) or local WiFi IP (Android/iOS).
+  static const String _envApiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  );
+
   static String get apiBaseUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
-    }
-    // Fallback for Android/iOS - updated to current local IP (192.168.1.4)
+    if (_envApiBaseUrl.isNotEmpty) return _envApiBaseUrl;
+    if (kIsWeb) return 'http://127.0.0.1:8000';
+    // Fallback for Android/iOS on the same WiFi network
     return 'http://192.168.1.4:8000';
   }
 

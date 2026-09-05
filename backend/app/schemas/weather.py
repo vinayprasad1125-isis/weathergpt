@@ -18,6 +18,7 @@ class CurrentWeather(BaseModel):
     pressure: int
     uv_index: float
     precipitation: float
+    precipitation_probability: int = 0
     cloud_cover: int
 
 class SunInformation(BaseModel):
