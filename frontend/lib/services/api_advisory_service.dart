@@ -20,7 +20,7 @@ class ApiAdvisoryService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: Config.apiHeaders,
         body: requestBody,
       ).timeout(const Duration(seconds: 15));
 

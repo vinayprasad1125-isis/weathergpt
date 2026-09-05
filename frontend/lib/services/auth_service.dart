@@ -13,7 +13,10 @@ class AuthService {
       final url = Uri.parse('${Config.apiBaseUrl}/api/v1/auth/login');
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: {'username': 'user', 'password': 'password'},
       );
 

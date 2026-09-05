@@ -10,11 +10,21 @@ class Config {
   );
 
   static String get apiBaseUrl {
-    if (_envApiBaseUrl.isNotEmpty) return _envApiBaseUrl;
+    // Web (browser) always talks directly to localhost — CORS-free.
+    // Android/iOS uses the public ngrok URL so it works on any network.
     if (kIsWeb) return 'http://127.0.0.1:8000';
+    if (_envApiBaseUrl.isNotEmpty) return _envApiBaseUrl;
     // Fallback for Android/iOS on the same WiFi network
     return 'http://192.168.1.4:8000';
   }
+
+  /// Default headers for all backend API requests.
+  /// Includes the ngrok bypass header so the app works through ngrok tunnels
+  /// without being intercepted by the browser interstitial warning page.
+  static Map<String, String> get apiHeaders => {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  };
 
   static const String _envOwmApiKey = String.fromEnvironment(
     'OWM_API_KEY',

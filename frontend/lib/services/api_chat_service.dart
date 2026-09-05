@@ -19,7 +19,7 @@ class ApiChatService {
       final response = await http.post(
         url,
         headers: {
-          'Content-Type': 'application/json',
+          ...Config.apiHeaders,
           'Authorization': 'Bearer $token',
         },
         body: json.encode({

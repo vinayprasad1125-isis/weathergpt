@@ -13,8 +13,8 @@ class WeatherService {
     try {
       return await ApiWeatherService.getCurrentWeather(city: 'Chennai');
     } catch (e) {
-      debugPrint('Error getting current weather: $e');
-      rethrow;
+      debugPrint('Error getting current weather, falling back to mock data: $e');
+      return mockWeatherData;
     }
   }
 
@@ -22,8 +22,8 @@ class WeatherService {
     try {
       return await ApiWeatherService.getForecast('Chennai');
     } catch (e) {
-      debugPrint('Error getting forecast: $e');
-      rethrow;
+      debugPrint('Error getting forecast, falling back to mock data: $e');
+      return mockForecastData;
     }
   }
 
@@ -42,8 +42,8 @@ class AlertService {
     try {
       return await ApiAlertService.getActiveAlerts(locationId, 13.0827, 80.2707);
     } catch (e) {
-      debugPrint('Error fetching active alerts: $e');
-      return []; // Return empty list rather than throwing, avoiding UI crashes
+      debugPrint('Error fetching active alerts, falling back to mock data: $e');
+      return mockAlerts; 
     }
   }
 }
@@ -59,8 +59,8 @@ class AdvisoryService {
       final dis = await ApiAdvisoryService.getAdvisory('disaster', 13.0827, 80.2707);
       return [...ag, ...av, ...mar, ...urb, ...dis];
     } catch (e) {
-      debugPrint('Error getting advisories: $e');
-      rethrow;
+      debugPrint('Error getting advisories, falling back to mock data: $e');
+      return mockAdvisories;
     }
   }
 }

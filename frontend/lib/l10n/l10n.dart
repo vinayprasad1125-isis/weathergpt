@@ -29,6 +29,8 @@ class AppLocalizations {
       'home': 'Home',
       'more': 'More',
       'news': 'News',
+      'marine': 'Marine Weather',
+      'aviation': 'Aviation Weather',
       'languageSelection': 'Language Selection',
     },
     'hi': {
@@ -48,6 +50,8 @@ class AppLocalizations {
       'home': 'होम',
       'more': 'अधिक',
       'news': 'समाचार',
+      'marine': 'समुद्री मौसम',
+      'aviation': 'विमानन मौसम',
       'languageSelection': 'भाषा चयन',
     },
     'ta': {
@@ -67,6 +71,8 @@ class AppLocalizations {
       'home': 'முகப்பு',
       'more': 'மேலும்',
       'news': 'செய்திகள்',
+      'marine': 'கடல் வானிலை',
+      'aviation': 'விமான வானிலை',
       'languageSelection': 'மொழி தேர்வு',
     },
   };

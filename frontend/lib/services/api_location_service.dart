@@ -9,7 +9,7 @@ class ApiLocationService {
     try {
       final uri = Uri.parse('${Config.apiBaseUrl}/api/v1/location/search?q=$query');
       
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await http.get(uri, headers: Config.apiHeaders).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);

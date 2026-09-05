@@ -79,7 +79,7 @@ class _AviationScreenState extends State<AviationScreen> {
             const SizedBox(height: 8),
             _infoRow("Raw Text:", metar['rawOb'] ?? 'N/A'),
             const SizedBox(height: 12),
-            _infoRow("Time:", metar['obsTime']?.toString() ?? 'N/A'),
+            _infoRow("Time:", _formatTime(metar['obsTime'])),
             _infoRow("Temp / Dewpoint:", "${metar['temp']}°C / ${metar['dewp']}°C"),
             _infoRow("Wind:", "${metar['wdir']}° at ${metar['wspd']} kts"),
             _infoRow("Visibility:", "${metar['visib']} sm"),
@@ -118,14 +118,33 @@ class _AviationScreenState extends State<AviationScreen> {
             const SizedBox(height: 8),
             _infoRow("Raw Text:", taf['rawTAF'] ?? 'N/A'),
             const SizedBox(height: 12),
-            _infoRow("Issue Time:", taf['issueTime'] ?? 'N/A'),
-            _infoRow("Valid Time:", "${taf['validTimeFrom']} to ${taf['validTimeTo']}"),
+            _infoRow("Issue Time:", _formatTime(taf['issueTime'])),
+            _infoRow("Valid Time:", "${_formatTime(taf['validTimeFrom'])} to ${_formatTime(taf['validTimeTo'])}"),
           ],
         ),
       ),
     );
   }
   
+  String _formatTime(dynamic time) {
+    if (time == null) return 'N/A';
+    if (time is int) {
+      return DateTime.fromMillisecondsSinceEpoch(time * 1000).toLocal().toString().split('.')[0];
+    }
+    if (time is String) {
+      final intVal = int.tryParse(time);
+      if (intVal != null && intVal > 100000000) {
+        return DateTime.fromMillisecondsSinceEpoch(intVal * 1000).toLocal().toString().split('.')[0];
+      }
+      try {
+        return DateTime.parse(time).toLocal().toString().split('.')[0];
+      } catch (_) {
+        return time;
+      }
+    }
+    return time.toString();
+  }
+
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),

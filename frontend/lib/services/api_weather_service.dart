@@ -17,7 +17,7 @@ class ApiWeatherService {
       }
       query = queryParams.join('&');
       final url = Uri.parse('${Config.apiBaseUrl}/api/v1/weather/current?$query');
-      final response = await http.get(url).timeout(const Duration(seconds: 15));
+      final response = await http.get(url, headers: Config.apiHeaders).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -72,7 +72,7 @@ class ApiWeatherService {
   static Future<ForecastData> getForecast(String city) async {
     try {
       final url = Uri.parse('${Config.apiBaseUrl}/api/v1/weather/forecast?city=${Uri.encodeComponent(city)}');
-      final response = await http.get(url).timeout(const Duration(seconds: 15));
+      final response = await http.get(url, headers: Config.apiHeaders).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -116,6 +116,23 @@ class ApiWeatherService {
       return days[date.weekday - 1];
     } catch (e) {
       return dateString.substring(0, 10);
+    }
+  }
+
+  static Future<Map<String, dynamic>> getMarineWeather(double lat, double lon) async {
+    try {
+      final url = Uri.parse('${Config.apiBaseUrl}/api/v1/weather/marine?lat=$lat&lon=$lon');
+      final response = await http.get(url, headers: Config.apiHeaders).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        debugPrint('Marine API Error: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to load marine data');
+      }
+    } catch (e) {
+      debugPrint('Error fetching marine data: $e');
+      rethrow;
     }
   }
 }

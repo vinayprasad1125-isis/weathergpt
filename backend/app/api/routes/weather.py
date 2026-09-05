@@ -32,6 +32,15 @@ async def get_forecast(
     logger.info(f"Forecast request received for location: {city}")
     return await service.get_forecast(city)
 
+@router.get("/marine")
+async def get_marine(
+    lat: float = Query(..., description="Latitude"),
+    lon: float = Query(..., description="Longitude"),
+    service: WeatherService = Depends(get_weather_service)
+):
+    logger.info(f"Marine request received for lat: {lat}, lon: {lon}")
+    return await service.get_marine_weather(lat, lon)
+
 
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession

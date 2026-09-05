@@ -12,6 +12,7 @@ import 'screens/map_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/advisories_screen.dart';
 import 'screens/aviation_screen.dart';
+import 'screens/marine_screen.dart';
 import 'screens/news_screen.dart';
 import 'screens/login_screen.dart';
 import 'widgets/headers.dart';
@@ -131,6 +132,7 @@ class _MainNavigatorState extends State<MainNavigator> {
     const ForecastScreen(),
     const AlertsScreen(),
     const AviationScreen(),
+    const MarineScreen(),
     const ClimateScreen(),
     const AdvisoriesScreen(),
     const NewsScreen(),
@@ -202,11 +204,12 @@ class _MainNavigatorState extends State<MainNavigator> {
                     _DrawerItem(icon: LucideIcons.cloud, label: l10n.get('forecast'), selected: _currentIndex == 2, onTap: () => _navigate(2)),
                     _DrawerItem(icon: LucideIcons.alertTriangle, label: l10n.get('alerts'), selected: _currentIndex == 3, onTap: () => _navigate(3)),
                     const Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Divider()),
-                    _DrawerItem(icon: LucideIcons.planeTakeoff, label: 'Aviation Weather', selected: _currentIndex == 4, onTap: () => _navigate(4)),
-                    _DrawerItem(icon: LucideIcons.barChart2, label: l10n.get('climate'), selected: _currentIndex == 5, onTap: () => _navigate(5)),
-                    _DrawerItem(icon: LucideIcons.bookOpen, label: l10n.get('advisories'), selected: _currentIndex == 6, onTap: () => _navigate(6)),
-                    _DrawerItem(icon: LucideIcons.newspaper, label: l10n.get('news'), selected: _currentIndex == 7, onTap: () => _navigate(7)),
-                    _DrawerItem(icon: LucideIcons.settings, label: l10n.get('settings'), selected: _currentIndex == 8, onTap: () => _navigate(8)),
+                    _DrawerItem(icon: LucideIcons.planeTakeoff, label: l10n.get('aviation'), selected: _currentIndex == 4, onTap: () => _navigate(4)),
+                    _DrawerItem(icon: LucideIcons.waves, label: l10n.get('marine'), selected: _currentIndex == 5, onTap: () => _navigate(5)),
+                    _DrawerItem(icon: LucideIcons.barChart2, label: l10n.get('climate'), selected: _currentIndex == 6, onTap: () => _navigate(6)),
+                    _DrawerItem(icon: LucideIcons.bookOpen, label: l10n.get('advisories'), selected: _currentIndex == 7, onTap: () => _navigate(7)),
+                    _DrawerItem(icon: LucideIcons.newspaper, label: l10n.get('news'), selected: _currentIndex == 8, onTap: () => _navigate(8)),
+                    _DrawerItem(icon: LucideIcons.settings, label: l10n.get('settings'), selected: _currentIndex == 9, onTap: () => _navigate(9)),
                     const Padding(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Divider()),
                     _DrawerItem(
                       icon: LucideIcons.globe,
